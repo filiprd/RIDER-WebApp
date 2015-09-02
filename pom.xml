@@ -3,10 +3,10 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>eu.sealsproject.domain.oet.recommendation</groupId>
-	<artifactId>omt-ijitdm-recommendation</artifactId>
+	<artifactId>rider-WebApp</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>war</packaging>
-	<name>seals-recommendation Tapestry 5 Application</name>
+	<name>rider-WebApp Tapestry 5 Application</name>
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.tapestry</groupId>
