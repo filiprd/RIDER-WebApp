@@ -1,0 +1,9 @@
+<html t:type="layout" title="SEALS recommendation"
+		t:sidebarTitle="SEALS"
+		xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
+		xmlns:p="tapestry:parameter">
+		
+		<p>There was an error in the recommendation process. We are working on to fix it.</p>
+		
+		<t:actionlink t:id="index">Go back</t:actionlink>
+</html>

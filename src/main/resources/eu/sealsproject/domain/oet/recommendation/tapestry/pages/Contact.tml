@@ -1,0 +1,7 @@
+<html t:type="layout" title="Contact eu.sealsproject.domain.oet.recommendation"
+      xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
+      xmlns:p="tapestry:parameter">
+
+    <p>If you have any questions or comments about SEALS recommendation application, contact fradulovic@delicias.dia.upm.es</p>
+
+</html>

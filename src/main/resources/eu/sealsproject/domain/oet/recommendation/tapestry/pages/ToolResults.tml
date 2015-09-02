@@ -1,0 +1,26 @@
+<html t:type="layout" title="SEALS recommendation"
+      t:sidebarTitle="SEALS"
+      xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
+      xmlns:p="tapestry:parameter">
+        <!-- Most of the page content, including <head>, <body>, etc. tags, comes from Layout.tml -->
+        
+        <t:pagelink page="recommendation">back</t:pagelink> <br/>
+                
+        <p>Evaluation results obtained for <b>${toolVersion.name}</b>
+	        <t:if t:test="${hasVersion(toolVersion)}">
+	        	, Version <b>${toolVersion.versionNumber}</b><br/>
+	        </t:if>
+        
+       
+        </p>
+        
+         <t:grid source="qualityValues" row="qualityValue" add="measureName" reorder="measureName" exclude="description">
+	    	    <p:measureNameCell>
+                	 ${qualityValue.forMeasure.name}
+            	</p:measureNameCell>
+	     </t:grid>
+
+    <p:sidebar>
+    </p:sidebar>
+    
+</html>

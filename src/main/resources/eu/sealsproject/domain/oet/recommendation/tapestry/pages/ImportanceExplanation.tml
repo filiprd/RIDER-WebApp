@@ -1,0 +1,60 @@
+<html t:type="layout" title="SEALS recommendation"
+	t:sidebarTitle="SEALS"
+	xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
+	xmlns:p="tapestry:parameter">
+<!-- Most of the page content, including <head>, <body>, etc. tags, comes from Layout.tml -->
+
+ <t:pagelink page="recommendation">back</t:pagelink> <br/>
+ 
+<h4>Requirements importance (weights)</h4> 
+
+<p>The importance of the criteria is a result of the influences/dependencies identified in the quality model.
+This table shows influence/dependence priorities between the criteria that are taken into account in your recommendation.
+For example, criterion in the <i>i-th</i> row influences criterion in the <i>j-th</i> row,
+i.e. criterion in the <i>j-th</i> row depends on the criterion in the <i>i-th</i> row.<br/>
+Criterion which has more influence on other criteria, and which is less dependent, will have a higher importance (weight).<br/>
+Influences of the criteria that are specified as requirements are marked in grey.
+</p>
+
+<table class="t-data-grid" border="1">
+	<thead>
+		<tr>
+			<th class="Category t-first">Influence/Dependence</th>	
+			<th class="Importance">Importance</th>					
+			<t:loop source="qualityMeasures" value="measure">
+					<th class="${measure}">
+						${getName(measure)}
+					</th>
+			</t:loop>
+		</tr>
+	</thead>
+
+	<tbody>
+		<t:loop source="influenceList" value="influences">
+			<tr>
+				<td bgcolor="#809fff"><font color="white"><b>${getMeasureName(influences)}</b></font></td>
+				
+					<t:if t:test="isRequirement(influences)">	
+						<td bgcolor="#DFDFDF" class="red">${getImportance(influences)} </td>				
+						<t:loop source="influences" value="influence">
+							<td bgcolor="#DFDFDF">
+								${decimals(influence)}
+							</td>
+						</t:loop>
+					<p:else>
+						<td class="blue"> / </td>
+						<t:loop source="influences" value="influence">
+							<td>
+								${decimals(influence)}
+							</td>
+						</t:loop>
+					</p:else>
+					</t:if>			
+
+			</tr>
+		</t:loop>
+	</tbody>
+
+</table>
+
+</html>

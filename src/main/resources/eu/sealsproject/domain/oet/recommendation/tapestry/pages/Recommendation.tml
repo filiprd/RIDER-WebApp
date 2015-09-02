@@ -1,0 +1,192 @@
+<html t:type="layout" title="SEALS recommendation"
+	t:sidebarTitle="SEALS"
+	xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
+	xmlns:p="tapestry:parameter">
+<!-- Most of the page content, including <head>, <body>, etc. tags, comes from Layout.tml -->
+
+ <t:pagelink page="index">back</t:pagelink> <br/>
+ 
+<p>Specified requirements</p>
+
+<t:grid source="requirements" row="requirement" add="measure"
+	reorder="measure">
+	<p:measureCell>
+					${requirement.measure.name}
+				</p:measureCell>
+</t:grid>
+
+
+<br />
+
+<p>This table presents the results of the recommendation.
+Alternatives are sorted from best to worst, and each alternative
+contains a tool or a set of tools suitable for the previously specified
+criteria. The field <i>Result</i> denotes the overall score of each
+alternative in the recommendation process.<br />
+You can click on any tool and observe all evaluation result for that
+tool.</p>
+
+
+<t:grid source="recommendations" row="alternative" exclude="id"
+	add="tools,order" reorder="order,tools" rowsPerPage="10">
+	<p:orderCell>
+					Alternative ${increaseOrder(recommendations.indexOf(alternative))}
+				</p:orderCell>
+	<p:toolsCell>
+		<t:loop source="alternative.tools" value="toolVersion">
+			<t:actionlink t:id="showResults" context="toolVersion.uri">
+					             		${toolVersion.name}
+					    </t:actionlink>
+			<br />
+		</t:loop>
+	</p:toolsCell>
+	
+	<p:resultCell>
+					${getResult(alternative.result)}
+	</p:resultCell>
+
+</t:grid>
+
+<br />
+
+<p><b>Evaluation results.</b> This table shows importance and
+evaluation results for each specified criteria. Results that do not
+satisfy given criteria are colored in red.<br />
+If the visualization of the tests in which the results are obtained is
+available, you can see it by clicking on the result.<br/>
+By clicking on the <i>Importance</i> in the header of the table you can explore the importance flows of your requirements.
+</p>
+
+<table class="t-data-grid" width="200" border="1">
+	<thead>
+		<tr>
+			<th class="Category t-first">Quality Measure</th>
+			<th class="Importance"> 
+						<t:actionlink t:id="explainImportance">
+					             		Importance
+					    </t:actionlink>			
+			</th>
+			<t:loop source="recommendations" value="alternative">
+				<t:if t:test="${lessThanTen(recommendations.indexOf(alternative))}">
+					<th
+						class="Alternative ${increaseOrder(recommendations.indexOf(alternative))}">
+
+					Alternative ${increaseOrder(recommendations.indexOf(alternative))}
+
+					</th>
+				</t:if>
+			</t:loop>
+		</tr>
+	</thead>
+
+	<tbody>
+		<t:loop source="requirements" value="requirement">
+			<tr>
+				<td bgcolor="#DFDFDF">${requirement.measure.name}</td>
+				<td><span class="blue">${getImportance(requirement.measure.uri.toString())}</span></td>
+
+				<t:loop source="recommendations" value="alternative">
+					<t:if t:test="${lessThanTen(recommendations.indexOf(alternative))}">
+
+						<t:if t:test="${hasVisualization(requirement.measure)}">
+							<t:if
+								t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
+								<td><a
+									href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
+									target="_blank"> <span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
+								<p:else>
+									<td><a
+										href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
+										target="_blank"> <span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
+								</p:else>
+							</t:if>
+							<p:else>
+								<t:if
+									t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
+									<td><span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									<p:else>
+										<td><span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									</p:else>
+								</t:if>
+							</p:else>
+						</t:if>
+					</t:if>
+				</t:loop>
+
+			</tr>
+		</t:loop>
+	</tbody>
+
+</table>
+
+<t:if t:test="moreThanTenAlternatives()">
+<br />
+<div id="milestone" style="display: none">
+
+<table class="t-data-grid" width="200" border="1">
+	<thead>
+		<tr>
+			<th class="Category t-first">Quality Measure</th>
+			<th class="Importance">Importance</th>
+			<t:loop source="recommendations" value="alternative">
+				<t:if
+					t:test="${greaterThanTen(recommendations.indexOf(alternative))}">
+					<th
+						class="Alternative ${increaseOrder(recommendations.indexOf(alternative))}">
+
+					Alternative ${increaseOrder(recommendations.indexOf(alternative))}
+					<!--											${getTools(alternative)}--></th>
+				</t:if>
+			</t:loop>
+		</tr>
+	</thead>
+
+	<tbody>
+		<t:loop source="requirements" value="requirement">
+			<tr>
+				<td bgcolor="#DFDFDF">${requirement.measure.name}</td>
+				<td><span class="blue">${getImportance(requirement.measure.uri.toString())}</span></td>
+				<t:loop source="recommendations" value="alternative">
+					<t:if
+						t:test="${greaterThanTen(recommendations.indexOf(alternative))}">
+
+
+						<t:if t:test="${hasVisualization(requirement.measure)}">
+							<t:if
+								t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
+								<td><a
+									href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
+									target="_blank"> <span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
+								<p:else>
+									<td><a
+										href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
+										target="_blank"> <span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
+								</p:else>
+							</t:if>
+							<p:else>
+								<t:if
+									t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
+									<td><span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									<p:else>
+										<td><span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									</p:else>
+								</t:if>
+							</p:else>
+						</t:if>
+					</t:if>
+				</t:loop>
+			</tr>
+		</t:loop>
+	</tbody>
+
+</table>
+</div>
+<br />
+
+<form>
+	<div><input type="button" onClick="change('milestone')"
+		value="[+]" /> Show/Hide rest</div>
+</form>
+</t:if>
+
+</html>
