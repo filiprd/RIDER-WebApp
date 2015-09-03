@@ -1,7 +1,5 @@
 package eu.sealsproject.domain.oet.recommendation.services;
 
-
-import es.upm.fi.oeg.rider.comparisonsdepr.AlternativesComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.CharacteristicsComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.AlternativeComparison;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
@@ -78,8 +76,8 @@ public class ComparisonService {
 		
 		try {
 			
-			AlternativesComparison comparator = 	(AlternativesComparison)
-				Class.forName("es.upm.fi.oeg.rider.comparisonsdepr." + requirement.getMeasure().getScale().getClass().getSimpleName()
+			AlternativeComparison comparator = 	(AlternativeComparison)
+				Class.forName("eu.sealsproject.domain.oet.recommendation.comparisons." + requirement.getMeasure().getScale().getClass().getSimpleName()
 						+ "Comparison").newInstance();
 			
 			

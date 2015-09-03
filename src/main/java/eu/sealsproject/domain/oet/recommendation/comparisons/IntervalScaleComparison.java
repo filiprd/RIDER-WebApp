@@ -13,6 +13,14 @@ import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.Ra
 
 public class IntervalScaleComparison implements  AlternativeComparison, Satisfiable{
 
+	NumberFormat format = NumberFormat.getInstance(Locale.UK);
+	
+	public IntervalScaleComparison(){		
+		format.setMinimumIntegerDigits(1);
+		format.setMaximumFractionDigits(2);
+		format.setMinimumFractionDigits(2);
+	}
+	
 	/**
 	 * Compares value1 to value2
 	 */
@@ -67,7 +75,30 @@ public class IntervalScaleComparison implements  AlternativeComparison, Satisfia
 		}
 		return -1;
 	}
-// QualityValue value
+
+	@Override
+	public double maxDistanceComparison(Object result1, Object result2, String rankingFunction, double maxResultDifference, Object threshold) {
+		double r1;
+		double r2;
+		double t;
+		try {
+			r1 = new Double(result1.toString());
+			r2 = new Double(result2.toString());
+			t = new Double(threshold.toString());
+		} catch (Exception e) {
+			throw new RuntimeException("Provided argument is not an instance of Double class");
+		}
+		
+		if(r1 == r2)
+			return 1;
+		
+		
+		double threesholdComparison = compareWithThreshold(rankingFunction, r1, r2, t);
+		if(threesholdComparison != -1)
+			return threesholdComparison;
+		
+		return getComparison(r1, r2, maxResultDifference, rankingFunction,9);	
+	}
 
 	public boolean satisfiesRequirement(QualityValue value,
 			Requirement requirement) {
@@ -86,5 +117,63 @@ public class IntervalScaleComparison implements  AlternativeComparison, Satisfia
 			else
 				return true;
 		return false;
+	}
+	
+	private double getComparison(double r1, double r2, double distance, String rankingFunction, int outputCardinality){
+		if(rankingFunction.equals("Higher")){			
+			if(r1 > r2){
+				Double d = Math.rint(outputCardinality*(r1-r2)/distance + 0.5);	
+				if(d>9)
+					return 9;
+				if(d<1)
+					return 1;
+				return d;
+			}
+			Double d = Math.rint(outputCardinality*(Math.abs(r1-r2))/distance + 0.5);
+			if(d>9)
+				d = 0.11;
+			if(d<1)
+				return 1;
+			return Double.parseDouble(format.format(1/d));
+		}
+		
+		
+		if(rankingFunction.equals("Lower")){				
+			if(r1-r2 > 0){
+				Double d = Math.rint(outputCardinality*(r1-r2)/distance + 0.5);
+				if(d>9)
+					d = 0.11;
+				if(d<1)
+					return 1;
+				return Double.parseDouble(format.format(1/d));
+			}
+			Double d = Math.rint(outputCardinality*Math.abs(r1-r2)/distance + 0.5);	
+			if(d>9)
+				return 9;
+			if(d<1)
+				return 1;
+			return d;			
+		}
+		return -1;
+	}
+	
+	private double compareWithThreshold(String rankingFunction, double r1, double r2, double t){
+		if(rankingFunction.equals("Higher")){			
+			if(r1 >= t && t > r2)
+				return 9;			
+			if(r2 >= t && t > r1)
+				return 0.11;
+			
+		}
+		
+		if(rankingFunction.equals("Lower")){				
+			if(r1 <= t && t < r2)
+				return 9;			
+			if(r2 <= t && t < r1)
+				return 0.11;
+			
+		}
+		
+		return -1;
 	}
 }

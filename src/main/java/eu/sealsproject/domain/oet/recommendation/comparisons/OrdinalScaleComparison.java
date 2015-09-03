@@ -78,4 +78,12 @@ public class OrdinalScaleComparison implements  AlternativeComparison, Satisfiab
 		return false;
 	}
 
+
+	@Override
+	public double maxDistanceComparison(Object result1, Object result2,
+			String rankingFunction, double maxResultDifference, Object threshold) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }
