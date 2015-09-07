@@ -25,13 +25,10 @@ public class DataModelManager {
 	protected String dataSourceUrl;
 	protected String rdfLang;
 	
-	public DataModelManager(String dataSourceUrl, String rdfLang, boolean multipleFiles) {
+	public DataModelManager(String dataSourceUrl, String rdfLang) {
 		this.dataSourceUrl = dataSourceUrl;
 		this.rdfLang = rdfLang;
-		if(multipleFiles)
-			this.dataSource = readDataFromAllFiles(dataSourceUrl, rdfLang);
-		else
-			this.dataSource = readData(dataSourceUrl, rdfLang);
+		this.dataSource = readData(dataSourceUrl);
 		this.writer = new Bean2RDF(dataSource);
 		this.reader = new RDF2Bean(dataSource);
 		System.out.println("Model size: " + dataSource.size());
@@ -43,7 +40,7 @@ public class DataModelManager {
 		return dataSource;
 	}
 
-	public Model readData(String dataSourceUrl, String rdfLang) {
+	private Model readSingleDataFile(String dataSourceUrl) {
 		Model model = ModelFactory.createDefaultModel();
 		model.setNsPrefix("owl", "http://www.w3.org/2002/07/owl#");
 		model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
@@ -58,7 +55,7 @@ public class DataModelManager {
 			try {
 				System.err.println("Reading file: " + dataSourceUrl);
 				model.read(new FileInputStream(dataFile.toString()),
-						"http://www.seals-project.eu/metadata.owl#", rdfLang);
+						"http://www.seals-project.eu/metadata.owl#", this.rdfLang);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -66,7 +63,7 @@ public class DataModelManager {
 		return model;
 	}
 	
-	public Model readDataFromAllFiles(String dataSourceUrl, String rdfLang) {
+	public Model readData(String dataSourceUrl) {
 		Model model = ModelFactory.createDefaultModel();
 		model.setNsPrefix("owl", "http://www.w3.org/2002/07/owl#");
 		model.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
@@ -90,7 +87,7 @@ public class DataModelManager {
 		File[] files = dataFile.listFiles();
 		for (File file : files) {
 			if(file.isFile() && file.toString().endsWith(".rdf")){
-				model.add(readData(file.toString(), "RDF/XML"));				
+				model.add(readSingleDataFile(file.toString()));				
 			}
 		}
 		

@@ -17,7 +17,6 @@ public class EvaluationScenariosUtil {
 		URL url = Thread.currentThread().getContextClassLoader()
 		.getResource(dataSourceUrl);
 		String path = url.getFile();
-		// remove white spaces encoded with %20
 		path = path.replaceAll("%20", " ");		
 		File dataFile = new File(path);
 		properties = new Properties();
