@@ -546,5 +546,33 @@ public class DataService extends AbstractServiceImpl {
 		return max-min;
 	}
 
+	
+	public Collection<QualityMeasure> getAllQualityMeasures() {
+		String queryString = 
+				"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
+				"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+				"SELECT DISTINCT ?uri " +
+				"WHERE {\n" +
+				"      ?uri rdf:type qmo:QualityMeasure. \n" +
+				"      }";
+
+//			System.out.println(queryString);
+			
+			Collection<String> qualityMeasureUris = queryService
+					.executeOneVariableSelectSparqlQuery(queryString, "uri",
+							getDataModel());
+
+			Collection<QualityMeasure> col = null;
+			try {
+				col = loadResourcesByURIs(QualityMeasure.class,
+						qualityMeasureUris, true);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			return col;
+	}
+
 
 }

@@ -1,7 +1,20 @@
 package eu.sealsproject.domain.oet.recommendation.matrixfactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Properties;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
@@ -12,6 +25,7 @@ import eu.sealsproject.domain.oet.recommendation.services.AlternativesFactory;
 import eu.sealsproject.domain.oet.recommendation.services.ExpertComparisonService;
 import eu.sealsproject.domain.oet.recommendation.services.SupermatrixService;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
+import eu.sealsproject.domain.oet.recommendation.util.dependencies.QualityMeasureDependencies;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
 
@@ -24,99 +38,39 @@ import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
  */
 public class SupermatrixFactory {
 	
-//	public DataService service = new DataService();
-	
 	Matrix clusterMatrix;
 	
 	LinkedList<Alternative> alternatives = new LinkedList<Alternative>();
 	
-	/**
-	 * Creates a dependence martix. The dependence matrix is loaded from file.
-	 * @return
-	 */
-	public Matrix create(){
-		return Matrix.deserialize("matrices/SemTechSupermatrix");
-	}
+	private Properties config;
+	
+	private boolean compareOnlyRequirements;
+	
+	private LinkedList<QualityMeasureDependencies> dependencies;
+		
 	
 	/**
-	 * Extracts a submatrix based on the requirements.
-	 * The algorithm extracts characteristics from the requirements + the ones that influence them
-	 * @param requirements
-	 * @param compareOnlyRequirements Whether the comparisons of alternatives will be performed only w.rt.
-	 * 		requirements, or w.r.t all criteria in the network
+	 * Creates a supermatrix matrix. The supermatrix matrix created based on requirements and criteria comparisons.
 	 * @return
 	 */
-	public Matrix getSubmatrix(LinkedList<Requirement> requirements, DataService service, boolean 
-			compareOnlyRequirements){
-		MatrixMapping smMap = MatrixMapping.loadSupermatrixMap();
-		Matrix supermatrixMatrix = create();
-		
-		//submatrix mapping
-		MatrixMapping subMap = new MatrixMapping();
-		int indexer=0;
-		
-		
-		LinkedList<Integer> indexes = new LinkedList<Integer>();
+	public Matrix create(LinkedList<Requirement> requirements, DataService service){
+		loadConfig();
+		LinkedList<Matrix> criteriaComparisons = loadCriteriaComparisons();
+		this.dependencies = loadDependencies();
+		if(config.getProperty("modelExtraction-comparison").equals("requirements"))
+			this.compareOnlyRequirements = true;
+		if(config.getProperty("modelExtraction-comparison").equals("complete"))
+			this.compareOnlyRequirements = false;
 				
-		for (Requirement item : requirements) {
-			int column = smMap.getRowNumber(item.getMeasure().getUri().toString());
-//			System.out.println("Column "+column);
-			if(!indexes.contains(column)){
-				indexes.add(column);
-				subMap.addMapItem(new MapItem(indexer++, smMap.getCharacteristicUri(column)));
-			}
-			
-			// adds all characteristics that influence the one in the 'column' (requirement)
-			for (int i = 0; i < supermatrixMatrix.getRowDimension(); i++) {
-				if(supermatrixMatrix.get(i, column) != 0){
-//					System.out.println("Row "+i);
-					if(!indexes.contains(i)){
-						indexes.add(i);
-						subMap.addMapItem(new MapItem(indexer++, smMap.getCharacteristicUri(i)));
-					}
-				}					
-			}
-		}
-		
-		int[] in = getIndexes(indexes);
-
-		// creates submatrix 
-		Matrix subSupermatrix = supermatrixMatrix.getMatrix(in, in);
-		subSupermatrix.setId("http://www.seals-project.eu/supermatrix");
-		subSupermatrix.setMapping(subMap);
-		
-
-		// normalizes entries in the supermatrix according to clusters, so that in every cluster 
-		// in a row the sum is one (has to be because of the comparisons)
-		for (int i = 0; i < in.length; i++) {
-			LinkedList<String> checked = new LinkedList<String>();
-			for (int j = 0; j < in.length; j++) {
-				LinkedList<Integer> clusterIndexes = new LinkedList<Integer>();
-				clusterIndexes.add(j);
-				String cluster =  service.getCharacteristicUriOfMeasure(
-						subSupermatrix.getMapping().getCharacteristicUri(j));
-				if(checked.contains(cluster))
-					continue;
-				checked.add(cluster);
-				for (int k = j+1; k < in.length; k++) {
-					if (cluster.equalsIgnoreCase(service.getCharacteristicUriOfMeasure(
-						subSupermatrix.getMapping().getCharacteristicUri(k))))
-						clusterIndexes.add(k);
-				}
-					int[] positions = getIndexes(clusterIndexes);
-					Matrix c = subSupermatrix.getMatrix(positions, i, i);
-					subSupermatrix.setMatrixColumn(positions, i, c.normalizeColumns());
-			}
-		}
-
-		
-//		return subSupermatrix;
-		this.alternatives = AlternativesFactory.createAlternativesList(requirements, service);
-//		System.out.println("ALTERNATIVES LIST: " + this.alternatives.size());
-		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(subSupermatrix,requirements,this.alternatives, service,compareOnlyRequirements);
-		initializeClusterMatrix(requirements, supermatrix, service,compareOnlyRequirements);
-		return supermatrix;
+		if (config.getProperty("modelExtraction-method").equals("requirements"))
+			return getRequirementsSupermatrix(requirements, criteriaComparisons, service);
+		if (config.getProperty("modelExtraction-method").equals("partial"))
+			return getPartialSupermatrix(requirements, criteriaComparisons, service);
+		if (config.getProperty("modelExtraction-method").equals("complete"))
+			return getCompleteSupermatrix(requirements, criteriaComparisons, service);
+		return null;
 	}
+
 
 	/**
 	 * Converts a list of integers into the array of integers
@@ -134,150 +88,6 @@ public class SupermatrixFactory {
 
 	public LinkedList<Alternative> getAlternatives() {
 		return alternatives;
-	}
-	
-	
-	/**
-	 * Extracts a submatrix based on the requirements, which only contains characteristics from the requirements
-	 * @param requirements
-	 * @param service
-	 * @return
-	 */
-	public Matrix getSubmatrixOnlyRequirements(LinkedList<Requirement> requirements, DataService service, boolean 
-			compareOnlyRequirements){
-		
-		MatrixMapping smMap = MatrixMapping.loadSupermatrixMap();
-		Matrix supermatrixMatrix = create();
-		
-		MatrixMapping subMap = new MatrixMapping();
-		int indexer=0;
-		
-		
-		LinkedList<Integer> indexes = new LinkedList<Integer>();
-				
-		for (Requirement item : requirements) {
-			int column = smMap.getRowNumber(item.getMeasure().getUri().toString());
-//			System.out.println("Column "+column);
-			if(!indexes.contains(column)){
-				indexes.add(column);
-				subMap.addMapItem(new MapItem(indexer++, smMap.getCharacteristicUri(column)));
-			}
-		}
-		
-		int[] in = getIndexes(indexes);
-
-
-		// creates submatrix 
-		Matrix subSupermatrix = supermatrixMatrix.getMatrix(in, in);
-		subSupermatrix.setId("http://www.seals-project.eu/supermatrix");
-		subSupermatrix.setMapping(subMap);
-		
-
-		for (int i = 0; i < in.length; i++) {
-			LinkedList<String> checked = new LinkedList<String>();
-			for (int j = 0; j < in.length; j++) {
-				LinkedList<Integer> clusterIndexes = new LinkedList<Integer>();
-				clusterIndexes.add(j);
-				String cluster =  service.getCharacteristicUriOfMeasure(
-						subSupermatrix.getMapping().getCharacteristicUri(j));
-				if(checked.contains(cluster))
-					continue;
-				checked.add(cluster);
-				for (int k = j+1; k < in.length; k++) {
-					if (cluster.equalsIgnoreCase(service.getCharacteristicUriOfMeasure(
-							subSupermatrix.getMapping().getCharacteristicUri(k))))
-						clusterIndexes.add(k);
-				}
-					int[] positions = getIndexes(clusterIndexes);
-					Matrix c = subSupermatrix.getMatrix(positions, i, i);
-					subSupermatrix.setMatrixColumn(positions, i, c.normalizeColumns());
-			}
-		}
-		
-		this.alternatives = AlternativesFactory.createAlternativesList(requirements, service);
-		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(subSupermatrix,requirements,this.alternatives, service,compareOnlyRequirements);
-		initializeClusterMatrix(requirements, supermatrix, service,compareOnlyRequirements);
-		return supermatrix;
-
-	}
-	
-	
-	/**
-	 * Extracts a submatrix based on the requirements, which includes all measures 
-	 * for a certain type of tool that is going to be recommended
-	 * @param requirements
-	 * @param service
-	 * @return
-	 */
-	public Matrix getSubmatrixAllMeasures(LinkedList<Requirement> requirements, DataService service, boolean 
-			compareOnlyRequirements){
-		
-		MatrixMapping smMap = MatrixMapping.loadSupermatrixMap();
-		Matrix supermatrixMatrix = create();
-		
-		MatrixMapping subMap = new MatrixMapping();
-		int indexer=0;
-		
-		
-		LinkedList<Integer> indexes = new LinkedList<Integer>();
-				
-		for (Requirement item : requirements) {
-			int column = smMap.getRowNumber(item.getMeasure().getUri().toString());
-			if(!indexes.contains(column)){
-				indexes.add(column);
-				subMap.addMapItem(new MapItem(indexer++, smMap.getCharacteristicUri(column)));
-			}
-			
-			Collection<String> measures = service.getQualityMeasureUrisForToolType(
-					service.getToolCategory(item.getMeasure().getUri().toString()).getUri().toString());
-			
-			
-			// adds all measures that belong to a tool type which has the measure from the requirement
-			for (int i = 0; i < supermatrixMatrix.getRowDimension(); i++) {
-				if(!indexes.contains(i)){
-					if(measures.contains(smMap.getCharacteristicUri(i))){
-						indexes.add(i);
-						subMap.addMapItem(new MapItem(indexer++, smMap.getCharacteristicUri(i)));
-					}
-				}				
-			}
-		}
-				
-		
-		int[] in = getIndexes(indexes);
-
-
-		// creates submatrix 
-		Matrix subSupermatrix = supermatrixMatrix.getMatrix(in, in);
-		subSupermatrix.setId("http://www.seals-project.eu/supermatrix");
-		subSupermatrix.setMapping(subMap);
-		
-
-		for (int i = 0; i < in.length; i++) {
-			LinkedList<String> checked = new LinkedList<String>();
-			for (int j = 0; j < in.length; j++) {
-				LinkedList<Integer> clusterIndexes = new LinkedList<Integer>();
-				clusterIndexes.add(j);
-				String cluster =  service.getCharacteristicUriOfMeasure(
-						subSupermatrix.getMapping().getCharacteristicUri(j));
-				if(checked.contains(cluster))
-					continue;
-				checked.add(cluster);
-				for (int k = j+1; k < in.length; k++) {
-					if (cluster.equalsIgnoreCase(service.getCharacteristicUriOfMeasure(
-							subSupermatrix.getMapping().getCharacteristicUri(k))))
-						clusterIndexes.add(k);
-				}
-					int[] positions = getIndexes(clusterIndexes);
-					Matrix c = subSupermatrix.getMatrix(positions, i, i);
-					subSupermatrix.setMatrixColumn(positions, i, c.normalizeColumns());
-			}
-		}
-		
-		this.alternatives = AlternativesFactory.createAlternativesList(requirements, service);
-		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(subSupermatrix,requirements,this.alternatives, service,compareOnlyRequirements);
-		initializeClusterMatrix(requirements, supermatrix, service,compareOnlyRequirements);
-		return supermatrix;
 	}
 
 	
@@ -325,92 +135,232 @@ public class SupermatrixFactory {
 	
 
 		this.clusterMatrix = clusterMatrix;
+	}
+	
+	
+	/**
+	 * Returns the supermatrix based only on user requirements
+	 * @param requirements
+	 * @param criteriaComparisons
+	 * @param service
+	 * @return
+	 */
+	private Matrix getRequirementsSupermatrix(LinkedList<Requirement> requirements, LinkedList<Matrix> criteriaComparisons, DataService service){
+		MatrixMapping supermatrixMapping = new MatrixMapping();
+		Matrix supermatrixMatrix = new Matrix(requirements.size(), requirements.size(), 0);
+		supermatrixMatrix.setId("supermatrix");
 		
+		int indexer = 0;
+		for (Requirement requirement : requirements) {
+			supermatrixMapping.addMapItem(new MapItem(indexer++, requirement.getMeasure().getUri().toString()));
+		}
+		supermatrixMatrix.setMapping(supermatrixMapping);
 		
-		//-------------------------------------------------------------------------
-		//				OLD METHOD
-		//-------------------------------------------------------------------------
-//		MatrixMapping supermatrixMapping = supermatrix.getMapping();
-//		
-//		LinkedList<String> characteristicsUris = 
-//			SupermatrixService.getCharacteristicsUris(supermatrixMapping, service);
-//		
-//		LinkedList<String> requirementsCharacteristicsUris = 
-//			SupermatrixService.getRequirementCharacteristicsUris(requirements);
-//
-//		
-//		MatrixMapping cmap = MatrixMapping.loadClusterMatrixMap();
-//		Matrix clusterMatrix = Matrix.deserialize("matrices/ClusterMatrix");;
-//		
-//		//mapping for the subcluster matrix
-//		MatrixMapping submatrixMapping = new MatrixMapping();
-//		int k = 0;
-//		
-//		//list of matrix indexes to extract
-//		LinkedList<Integer> indexes = new LinkedList<Integer>();
-//				
-//		//extracting every column that is in the requirements
-//		for (String item : characteristicsUris) {
-//			int column = cmap.getRowNumber(item);
-////			System.out.println("Column "+column + "; ch: " + cmap.getCharacteristicUri(column));	
-//			if(!indexes.contains(column)){
-//				indexes.add(column);
-//				submatrixMapping.addMapItem(new MapItem(k++, item));
-//			}
-//		}
-//		
-//		//adds the last column which refer to the alternatives
-//		indexes.add(clusterMatrix.getColumnDimension()-1);
-//		submatrixMapping.addMapItem(new MapItem(k, "Alternatives"));
-//		
-//		submatrixMapping.setId("clusterMatrix");
-//		
-//		//rearranging java objects
-//		int[] in = new int[indexes.size()];
-//		int dex = 0;		
-////		Collections.sort(indexes);		
-//		for (int i : indexes) {
-////			System.out.println("Adding " + i);
-//			in[dex++] = i;
-//		}
-//
-//		//creating subcluster matrix
-//		Matrix subCluster = clusterMatrix.getMatrix(in, in);
-//		subCluster.setId("http://www.seals-project.eu/clusterMatrix");
-//		subCluster.setMapping(submatrixMapping);
-//		
-//
-//		if(compareOnlyRequirements){
-//			for (int i = 0; i < subCluster.getRowDimension()-1; i++) {
-//				if(!requirementsCharacteristicsUris.contains(submatrixMapping.getCharacteristicUri(i))){
-//					subCluster.set(k, i, 0);
-//					subCluster.set(i, k, 0);
-//				}				
-//			}
-//		}
-//		subCluster.set(k, k, 0);
-//		
-//		
-//		// make zeroes in the elements that, because of the selection of requirements, do not depend
-//		// e.g. I/E errors in the example => in the cluster, 
-//		// 			OntProcRobust should have 0 w.r.t. OntProcRobust 
-//		// UPDATE: Previous is not valid, because dependencies between all elements are taken into account
-//		//	although alternatives are not compared w.r.t. all of criteria
-//		// UPDATE 2: zeroes should be entered because, within a certain cluster, selected requirements
-//		//	can be independent, which would mean that this cluster is not dependent on itself.
-//		
-//		for (int i = 0; i < subCluster.getRowDimension()-1; i++) {
-//			for (int j = 0; j < subCluster.getColumnDimension()-1; j++) {
-//				if(subCluster.get(i, j) == 0)
-//					continue;
-//				if(!existDependence(supermatrix, submatrixMapping.getCharacteristicUri(i),
-//						submatrixMapping.getCharacteristicUri(j), service))
-//					subCluster.set(i, j, 0);
-//			}
-//		}
-//		
-//		this.clusterMatrix = subCluster.normalizeColumns();
+		return fillSupermatrixWithComparisons(supermatrixMatrix, requirements, supermatrixMapping, criteriaComparisons, service);	
+		
+	}
+	
+	
+	/**
+	 * Returns the supermatrix based on all available quality measures
+	 * @param requirements
+	 * @param criteriaComparisons
+	 * @param service
+	 * @return
+	 */
+	private Matrix getCompleteSupermatrix(LinkedList<Requirement> requirements, LinkedList<Matrix> criteriaComparisons, DataService service){
+		MatrixMapping supermatrixMapping = new MatrixMapping();
+		Collection<QualityMeasure> qualtyMeasures = service.getAllQualityMeasures();
+		
+		Matrix supermatrixMatrix = new Matrix(qualtyMeasures.size(), qualtyMeasures.size(), 0);
+		supermatrixMatrix.setId("supermatrix");
+		
+		int indexer = 0;
+		for (QualityMeasure qualityMeasure : qualtyMeasures) {
+			supermatrixMapping.addMapItem(new MapItem(indexer++, qualityMeasure.getUri().toString()));
+		}
+		supermatrixMatrix.setMapping(supermatrixMapping);
+		
+		return fillSupermatrixWithComparisons(supermatrixMatrix, requirements, supermatrixMapping, criteriaComparisons, service);	
+	}
+	
+	
+	/**
+	 * Returns the supermatrix based on measures from requirements and those that influence them
+	 * @param requirements
+	 * @param criteriaComparisons
+	 * @param service
+	 * @return
+	 */
+	private Matrix getPartialSupermatrix(LinkedList<Requirement> requirements, LinkedList<Matrix> criteriaComparisons, DataService service){
+		MatrixMapping supermatrixMapping = new MatrixMapping();
+		LinkedList<String> supermatrixCriteria = new LinkedList<String>();
+		
+		int indexer = 0;
+		for (Requirement requirement : requirements) {
+			if (!supermatrixCriteria.contains(requirement.getMeasure().getUri()
+					.toString())) {
+				supermatrixMapping.addMapItem(new MapItem(indexer++,
+						requirement.getMeasure().getUri().toString()));
+				supermatrixCriteria.add(requirement.getMeasure().getUri()
+						.toString());
+			}
+			for (QualityMeasureDependencies qmDependencies : dependencies) {
+				if (qmDependencies.getId().equals(
+						requirement.getMeasure().getUri().toString())) {
+					for (String criteria : qmDependencies.getDependencies()) {
+						if (!supermatrixCriteria.contains(criteria)) {
+							supermatrixMapping.addMapItem(new MapItem(
+									indexer++, criteria));
+							supermatrixCriteria.add(criteria);
+						}
+					}
+				}
+			}
+		}
+
+		Matrix supermatrixMatrix = new Matrix(indexer, indexer, 0);
+		supermatrixMatrix.setId("supermatrix");
+		supermatrixMatrix.setMapping(supermatrixMapping);
+		
+		return fillSupermatrixWithComparisons(supermatrixMatrix, requirements, supermatrixMapping, criteriaComparisons, service);
+	}
+	
+	
+	/**
+	 * Fills the supermatrix with pairwise comparisons of criteria and of the alternatives
+	 * @param supermatrixMatrix - supermatrix containing only criteria
+	 * @param requirements - user requirements
+	 * @param supermatrixMapping - the mapping of the supermatrix
+	 * @param criteriaComparisons - set of criteria pairwise comparisons
+	 * @param service
+	 * @return
+	 */
+	private Matrix fillSupermatrixWithComparisons(Matrix supermatrixMatrix, LinkedList<Requirement> requirements, MatrixMapping supermatrixMapping,
+			LinkedList<Matrix> criteriaComparisons, DataService service){
+		ExpertComparisonService expertSupermatrixComparisons = new ExpertComparisonService();
+		for (int i = 0; i < supermatrixMatrix.getRowDimension(); i++) {
+			expertSupermatrixComparisons.setSupermatrixComparison(supermatrixMatrix, supermatrixMapping.getCharacteristicUri(i), 
+					criteriaComparisons, dependencies);
+		}
+				
+		this.alternatives = AlternativesFactory.createAlternativesList(requirements, service);
+		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(supermatrixMatrix,requirements,this.alternatives,service,compareOnlyRequirements);
+		initializeClusterMatrix(requirements, supermatrix, service,compareOnlyRequirements);
+		return supermatrix;
 	}
 
+	
+	protected void loadConfig(){	
+		URL url = Thread.currentThread().getContextClassLoader()
+		.getResource("config/config.properties");
+		String path = url.getFile();
+		// remove white spaces encoded with %20
+		path = path.replaceAll("%20", " ");
+		this.config = new Properties();
+		try {
+			config.load(new FileInputStream(new File(path)));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public LinkedList<Matrix> loadCriteriaComparisons() {
+		// Load the JSON file containing data about comparison matrices
+		URL url = Thread.currentThread().getContextClassLoader()
+				.getResource("matrices/criteriaComparisons.json");
+		String path = url.getFile();		
+		path = path.replaceAll("%20", " ");		
+				
+		JSONParser jsonParser = new JSONParser();
+		JSONArray jsonComparisonMatrices = null;
+		try {
+			jsonComparisonMatrices = (JSONArray) jsonParser.parse(new FileReader(new File(path)));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		// Create Matrix Java objects representing comparison matrices from JSON file
+		LinkedList<Matrix> comparisonMatrices = new LinkedList<Matrix>();		
+		Iterator<JSONObject> iteratorMatrices = jsonComparisonMatrices.iterator();
+        while (iteratorMatrices.hasNext()) {
+        	JSONObject jsonComparisonMatrix = iteratorMatrices.next();
+        	
+        	Integer size = (int)(long)((Long)jsonComparisonMatrix.get("size"));
+        	
+        	JSONArray jsonEntries = (JSONArray)jsonComparisonMatrix.get("entries");
+        	double[] entries = new double [size*size];
+        	for (int i = 0; i < size*size; i++) {
+        		entries[i] = Double.parseDouble(jsonEntries.get(i).toString());
+			}
+        	
+        	Matrix comparisonMatrix = new Matrix(entries,size);
+        	comparisonMatrix.setId((String) jsonComparisonMatrix.get("id"));
+
+        	MatrixMapping matrixMapping = new MatrixMapping();
+        	JSONArray jsonMatrixMappingItems = (JSONArray)jsonComparisonMatrix.get("mapping");
+        	Iterator<JSONObject> iteratorMappings = jsonMatrixMappingItems.iterator();
+            while (iteratorMappings.hasNext()) {
+            	JSONObject jsonMatrixMappingItem = iteratorMappings.next();
+            	matrixMapping.addMapItem(new MapItem((int)(long)((Long)jsonMatrixMappingItem.get("row")), (String) jsonMatrixMappingItem.get("key")));
+            }
+            comparisonMatrix.setMapping(matrixMapping);
+            comparisonMatrices.add(comparisonMatrix);
+        }
+		
+		return comparisonMatrices;
+	}
+	
+	
+	public LinkedList<QualityMeasureDependencies> loadDependencies(){
+		// Load the JSON file containing data about comparison matrices
+		URL url = Thread.currentThread().getContextClassLoader()
+				.getResource("matrices/criteriaDependencies.json");
+		String path = url.getFile();
+		path = path.replaceAll("%20", " ");
+
+		JSONParser jsonParser = new JSONParser();
+		JSONArray jsonDependencies = null;
+		try {
+			jsonDependencies = (JSONArray) jsonParser
+					.parse(new FileReader(new File(path)));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		LinkedList<QualityMeasureDependencies> qmDependencies = new LinkedList<QualityMeasureDependencies>();
+		Iterator<JSONObject> iteratorDependencies = jsonDependencies.iterator();
+        while (iteratorDependencies.hasNext()) {
+        	JSONObject jsonQualityMeasure = iteratorDependencies.next();
+        	
+        	QualityMeasureDependencies dependencies = new QualityMeasureDependencies((String)jsonQualityMeasure.get("id"));
+        	
+        	JSONArray jsonQMDependencies = (JSONArray)jsonQualityMeasure.get("dependencies");
+        	for (int i = 0; i < jsonQMDependencies.size(); i++) {
+        		dependencies.addDependency((String)jsonQMDependencies.get(i).toString());
+			}
+        	qmDependencies.add(dependencies);
+        }
+
+        return qmDependencies;
+	}
 	
 }

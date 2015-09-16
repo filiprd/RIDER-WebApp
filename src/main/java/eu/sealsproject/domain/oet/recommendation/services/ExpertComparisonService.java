@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URL;
 import java.util.LinkedList;
+import java.util.List;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
+import eu.sealsproject.domain.oet.recommendation.util.dependencies.QualityMeasureDependencies;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
 
@@ -113,7 +115,77 @@ public class ExpertComparisonService {
 	}
 	
 	
+	public void setSupermatrixComparison(Matrix supermatrix, String controlCriterion,
+			LinkedList<Matrix> supermatrixComparisons, LinkedList<QualityMeasureDependencies> dependencies){
+		
+		MatrixMapping supermatrixMapping = supermatrix.getMapping();		
+		for (Matrix comparisonMatrix : supermatrixComparisons) {			
+			if(comparisonMatrix.getId().equals(controlCriterion)){
+				int k = 0;
+				LinkedList<Integer> indexes = new LinkedList<Integer>();
+				MatrixMapping comparisonMatrixMapping = comparisonMatrix.getMapping();
+				LinkedList<MapItem> weightsMappingItems = new LinkedList<MapItem>();
+				for (int i = 0; i < comparisonMatrix.getRowDimension(); i++) {
+					if(isCriterionPresent(supermatrixMapping, comparisonMatrixMapping.getCharacteristicUri(i))
+							&& !indexes.contains(i)){
+						indexes.add(i);
+						weightsMappingItems.add(new MapItem(k++, comparisonMatrixMapping.getCharacteristicUri(i)));
+					}
+				}
+				if(indexes.size() > 1){
+					int columnInSupermatrix = supermatrixMapping.getRowNumber(controlCriterion);
+					MatrixMapping weightsMapping = new MatrixMapping();
+					weightsMapping.setId(controlCriterion);
+					weightsMapping.setMap(weightsMappingItems);
+					int[] in = getIndexes(indexes);
+					Matrix subComparison = new Matrix(comparisonMatrix.getMatrix(in,in).getArray());
+					subComparison.setId(controlCriterion);
+					subComparison.setMapping(weightsMapping); 
+					
+					Matrix weights = subComparison.getWeights();
+					for (int i = 0; i < weights.getRowDimension(); i++) {
+						int rowInSupermatrix = supermatrix.getMapping().getRowNumber(
+								weightsMapping.getCharacteristicUri(i));
+						supermatrix.set(rowInSupermatrix, columnInSupermatrix, weights.get(i, 0));
+					}
+				}
+				if(indexes.size() == 1)
+					supermatrix.set(indexes.get(0), supermatrixMapping.getRowNumber(controlCriterion), 1);
+			}
+		}
+		
+		// fills those entries that are related to a dependence of the control criterion on only one element in a cluster
+		for (int i = 0; i < supermatrix.getRowDimension(); i++) {
+			if(supermatrix.get(i, supermatrixMapping.getRowNumber(controlCriterion)) == 0 &&
+					isDependent(controlCriterion, supermatrixMapping.getCharacteristicUri(i), dependencies))
+				supermatrix.set(i, supermatrixMapping.getRowNumber(controlCriterion), 1);
+		}
+		
+	}
 	
+	private boolean isCriterionPresent(MatrixMapping supermatrixMapping,
+			String criterionId) {
+		List<MapItem> mappingItems = supermatrixMapping.getMap();
+		for (MapItem mappingItem : mappingItems) {
+			if(mappingItem.getChracteristicUri().equals(criterionId))
+				return true;
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Checks if the one criterion (the first argument) depends on the other criterion (the second argument)
+	 * @return
+	 */
+	private boolean isDependent(String controlCriterion, String criterion, LinkedList<QualityMeasureDependencies> dependencies){
+		for (QualityMeasureDependencies qmDependencies : dependencies) {
+			if(qmDependencies.getId().equals(controlCriterion) && qmDependencies.isDependent(criterion)){
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	private static LinkedList<Matrix> loadClusterComparisons(){
 		URL url = Thread.currentThread().getContextClassLoader()
@@ -139,6 +211,20 @@ public class ExpertComparisonService {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * Converts a list of integers into the array of integers
+	 * @param clusterIndexes
+	 * @return
+	 */
+	private int[] getIndexes(LinkedList<Integer> clusterIndexes) {
+		int[] in = new int[clusterIndexes.size()];
+		int dex = 0;		
+		for (int i : clusterIndexes) {
+			in[dex++] = i;
+		}
+		return in;
 	}
 
 }

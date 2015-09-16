@@ -84,7 +84,7 @@ public class Recommendation {
 			this.requirements = requirements;
 			
 			SupermatrixFactory factory = new SupermatrixFactory();
-			Matrix supermatrix = factory.getSubmatrixOnlyRequirements(requirements, service, true);
+			Matrix supermatrix = factory.create(requirements, service);
 			
 			recommendations = factory.getAlternatives();
 			
