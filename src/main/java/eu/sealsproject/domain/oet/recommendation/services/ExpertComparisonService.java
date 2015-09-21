@@ -3,11 +3,18 @@ package eu.sealsproject.domain.oet.recommendation.services;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
@@ -21,8 +28,11 @@ public class ExpertComparisonService {
 //	private LinkedList<Matrix> supermatrixComparisons = new LinkedList<Matrix>();
 	
 	public ExpertComparisonService(){
-		clusterComparisons = loadClusterComparisons();
-//		supermatrixComparisons = new LinkedList<Matrix>();
+	}
+	
+	
+	public ExpertComparisonService(LinkedList<String> characteristicUris){
+		clusterComparisons = loadClusterComparisons(characteristicUris);
 	}
 
 	
@@ -30,7 +40,7 @@ public class ExpertComparisonService {
 			boolean compareOnlyRequirements, LinkedList<String> requirementsCharacteristicsUris,
 			Matrix supermatrix, DataService service){
 		
-		// exctracts the comparison matrix related to a given control criterion
+		// Extracts the comparison matrix related to a given control criterion
 		Matrix comparisonMatrix = null;
 		for (Matrix clusterComparsion : clusterComparisons) {
 			if(clusterComparsion.getId().equals(controlCharacteristic)){
@@ -39,6 +49,18 @@ public class ExpertComparisonService {
 			}			
 		}
 		
+		// If there is no comparison matrix for control criterion then this criterion does not depend on any other
+		// Set 1 on alternatives row if needed
+		if(comparisonMatrix==null){
+			if(compareOnlyRequirements && requirementsCharacteristicsUris.contains(controlCharacteristic))
+				clusterMatrix.set(clusterMatrix.getRowDimension()-1,
+						clusterMatrix.getMapping().getRowNumber(controlCharacteristic),1);
+			if(!compareOnlyRequirements)
+				clusterMatrix.set(clusterMatrix.getRowDimension()-1,
+						clusterMatrix.getMapping().getRowNumber(controlCharacteristic),1);
+			return;
+		}
+			
 		
 
 		// extracts only those comparisons relevant to a given list of characteristics
@@ -82,7 +104,6 @@ public class ExpertComparisonService {
 			int rowInCluster = clusterMatrix.getMapping().getRowNumber(weightsMapping.getCharacteristicUri(i));
 			clusterMatrix.set(rowInCluster, columnInCluster, weights.get(i, 0));
 		}	
-		
 	}
 	
 	
@@ -175,7 +196,7 @@ public class ExpertComparisonService {
 	
 	
 	/**
-	 * Checks if the one criterion (the first argument) depends on the other criterion (the second argument)
+	 * Checks if the one supermatrix criterion (the first argument) depends on the other supermatrix criterion (the second argument)
 	 * @return
 	 */
 	private boolean isDependent(String controlCriterion, String criterion, LinkedList<QualityMeasureDependencies> dependencies){
@@ -187,30 +208,60 @@ public class ExpertComparisonService {
 		return false;
 	}
 	
-	private static LinkedList<Matrix> loadClusterComparisons(){
-		URL url = Thread.currentThread().getContextClassLoader()
-		.getResource("matrices/ClusterComparisons");
-		String path = url.getFile();
-		// remove white spaces encoded with %20
-		path = path.replaceAll("%20", " ");
-		
-		File dataFile = new File(path);
-		try {
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(dataFile));
-			LinkedList<Matrix> mm = (LinkedList<Matrix>) ois.readObject();
-			ois.close();
-			return mm;
-		} catch (FileNotFoundException e) {
-			System.err.println("Error in cluster comparisons deserialization");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.err.println("Error in cluster comparisons deserialization");
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			System.err.println("Error in cluster comparisons deserialization");
-			e.printStackTrace();
-		}
-		return null;
+	private static LinkedList<Matrix> loadClusterComparisons(LinkedList<String> characteristicUris){
+		// Load the JSON file containing data about comparison matrices
+				URL url = Thread.currentThread().getContextClassLoader()
+						.getResource("matrices/pairwiseComparisons.json");
+				String path = url.getFile();		
+				path = path.replaceAll("%20", " ");		
+						
+				JSONParser jsonParser = new JSONParser();
+				JSONArray jsonComparisonMatrices = null;
+				try {
+					jsonComparisonMatrices = (JSONArray) jsonParser.parse(new FileReader(new File(path)));
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				
+				// Create Matrix Java objects representing comparison matrices from JSON file
+				LinkedList<Matrix> comparisonMatrices = new LinkedList<Matrix>();		
+				Iterator<JSONObject> iteratorMatrices = jsonComparisonMatrices.iterator();
+		        while (iteratorMatrices.hasNext()) {
+		        	JSONObject jsonComparisonMatrix = iteratorMatrices.next();
+		        	
+		        	if(characteristicUris.contains((String) jsonComparisonMatrix.get("id"))){
+		        		Integer size = (int)(long)((Long)jsonComparisonMatrix.get("size"));
+			        	
+			        	JSONArray jsonEntries = (JSONArray)jsonComparisonMatrix.get("entries");
+			        	double[] entries = new double [size*size];
+			        	for (int i = 0; i < size*size; i++) {
+			        		entries[i] = Double.parseDouble(jsonEntries.get(i).toString());
+						}
+			        	
+			        	Matrix comparisonMatrix = new Matrix(entries,size);
+			        	comparisonMatrix.setId((String) jsonComparisonMatrix.get("id"));
+
+			        	MatrixMapping matrixMapping = new MatrixMapping();
+			        	JSONArray jsonMatrixMappingItems = (JSONArray)jsonComparisonMatrix.get("mapping");
+			        	Iterator<JSONObject> iteratorMappings = jsonMatrixMappingItems.iterator();
+			            while (iteratorMappings.hasNext()) {
+			            	JSONObject jsonMatrixMappingItem = iteratorMappings.next();
+			            	matrixMapping.addMapItem(new MapItem((int)(long)((Long)jsonMatrixMappingItem.get("row")), (String) jsonMatrixMappingItem.get("key")));
+			            }
+			            comparisonMatrix.setMapping(matrixMapping);
+			            comparisonMatrices.add(comparisonMatrix);
+		        	}
+		        }
+				
+				return comparisonMatrices;
 	}
 	
 	/**

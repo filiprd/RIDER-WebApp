@@ -21,7 +21,6 @@ import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
-import eu.sealsproject.domain.oet.recommendation.matrixfactory.ClusterMatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.matrixfactory.SupermatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.matrixfactory.WeightedMatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;

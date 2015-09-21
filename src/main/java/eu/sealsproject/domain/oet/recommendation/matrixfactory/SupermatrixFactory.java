@@ -100,9 +100,7 @@ public class SupermatrixFactory {
 	private void initializeClusterMatrix(LinkedList<Requirement> requirements, Matrix 
 			supermatrix, DataService service, boolean compareOnlyRequirements){
 
-		
-		ExpertComparisonService expertClusterComparisons = new ExpertComparisonService();
-		
+				
 		// Uris of characteristics related to measures from supermatrix
 		LinkedList<String> characteristicsUris = 
 			SupermatrixService.getCharacteristicsUris(supermatrix.getMapping(), service);
@@ -122,8 +120,11 @@ public class SupermatrixFactory {
 		k--;
 		
 		// creates a cluster matrix object
-		Matrix clusterMatrix = new Matrix(k+1, k+1);
+		Matrix clusterMatrix = new Matrix(k+1, k+1, 0);
 		clusterMatrix.setMapping(clusterMapping);
+		
+		ExpertComparisonService expertClusterComparisons = new ExpertComparisonService(characteristicsUris);
+
 		
 		// fills the cluster matrix with comparisons
 		for (int i = 0; i < clusterMatrix.getColumnDimension(); i++) {
@@ -251,6 +252,9 @@ public class SupermatrixFactory {
 	}
 
 	
+	/**
+	 * Loads the configuration properties file
+	 */
 	protected void loadConfig(){	
 		URL url = Thread.currentThread().getContextClassLoader()
 		.getResource("config/config.properties");
@@ -268,10 +272,14 @@ public class SupermatrixFactory {
 	}
 	
 	
+	/**
+	 * Loads criteria pairwise comparison matrices from the JSON file
+	 * @return
+	 */
 	public LinkedList<Matrix> loadCriteriaComparisons() {
 		// Load the JSON file containing data about comparison matrices
 		URL url = Thread.currentThread().getContextClassLoader()
-				.getResource("matrices/criteriaComparisons.json");
+				.getResource("matrices/pairwiseComparisons.json");
 		String path = url.getFile();		
 		path = path.replaceAll("%20", " ");		
 				
@@ -326,7 +334,7 @@ public class SupermatrixFactory {
 	public LinkedList<QualityMeasureDependencies> loadDependencies(){
 		// Load the JSON file containing data about comparison matrices
 		URL url = Thread.currentThread().getContextClassLoader()
-				.getResource("matrices/criteriaDependencies.json");
+				.getResource("matrices/dependencies.json");
 		String path = url.getFile();
 		path = path.replaceAll("%20", " ");
 
