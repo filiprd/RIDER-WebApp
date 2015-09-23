@@ -16,8 +16,8 @@ public class ComparisonService {
 //	public static DataService service = new DataService();
 
 	// compares two alternatives w.r.t a criteria
-	public static double compareAlternatives(Alternative alternative1, Alternative alternative2,
-			Requirement requirement) {
+	public static double simpleComparison(Alternative alternative1, Alternative alternative2,
+			Requirement requirement, DataService service) {
 		
 		QualityValue value1 = alternative1.getQualityValue(requirement.getMeasure().getUri().toString());
 		QualityValue value2 = alternative2.getQualityValue(requirement.getMeasure().getUri().toString());
@@ -67,7 +67,7 @@ public class ComparisonService {
 	}
 	
 	// FOR using max distance comparisons from anp-lib
-	public static double compareAlternativesMaxDistance(Alternative alternative1, Alternative alternative2,
+	public static double maxDistanceComparison(Alternative alternative1, Alternative alternative2,
 			Requirement requirement, DataService service) {
 		
 		QualityValue value1 = alternative1.getQualityValue(requirement.getMeasure().getUri().toString());
@@ -162,7 +162,5 @@ public class ComparisonService {
 
 	}
 	
-	
-
 
 }

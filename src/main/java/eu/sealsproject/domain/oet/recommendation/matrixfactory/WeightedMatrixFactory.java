@@ -18,7 +18,7 @@ public class WeightedMatrixFactory {
 		}
 		if(copy.isStohastic())
 			return copy;
-		System.err.println("Weighted matrix was not stochastic");
+		System.err.println("Weighted matrix was not stochastic, columns have been normalized");
 		return copy.normalizeColumns();
 	}
 

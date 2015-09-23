@@ -1,5 +1,7 @@
 package eu.sealsproject.domain.oet.recommendation.services;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.LinkedList;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
@@ -21,17 +23,17 @@ public class SupermatrixService {
 	
 	// fills the supermatrix with alternatives comparisons
 	public static Matrix fillSupermatrixWithAlternatives(Matrix supermatrix, 
-			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives,
+			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives, String algorithm,
 			DataService service, boolean onlyRequirement) {
 		if(onlyRequirement)
-			return fillSupermatrixWithAlternativesOnlyRequirementsComparison(supermatrix, requirements, alternatives, service);
+			return fillSupermatrixWithAlternativesOnlyRequirementsComparison(supermatrix, requirements, alternatives, algorithm, service);
 		else
-			return fillSupermatrixWithAlternativesALLComparisons(supermatrix, requirements, alternatives, service);
+			return fillSupermatrixWithAlternativesALLComparisons(supermatrix, requirements, alternatives, algorithm, service);
 	}
 
 	// fills the supermatrix with alternatives comparisons
 	public static Matrix fillSupermatrixWithAlternativesOnlyRequirementsComparison(Matrix supermatrix, 
-			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives,
+			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives, String algorithm,
 			DataService service) {
 						
 		int k = supermatrix.getRowDimension();
@@ -39,7 +41,7 @@ public class SupermatrixService {
 		
 				
 		for (Requirement requirement : requirements) {
-			Matrix mat = compareAlternatives(requirement,alternatives, service);	
+			Matrix mat = compareAlternatives(requirement,alternatives, algorithm, service);	
 			
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().
@@ -135,7 +137,7 @@ public class SupermatrixService {
 
 	// compares alternatives w.r.t characteristic and returns weights
 	public static Matrix compareAlternatives(Requirement requirement,
-			LinkedList<Alternative> alternatives, DataService service) {
+			LinkedList<Alternative> alternatives, String algorithm, DataService service) {
 		
 		int size = alternatives.size();
 		Matrix comparison = new Matrix(size,size);
@@ -148,13 +150,48 @@ public class SupermatrixService {
 				}
 				
 				
-				// ======!!!!!!  CHOOSING A COMPARISON ALGORITHM  !!!!!!==========
+				Method comparator;
+				double result = -1;
+				try {
+					Class<?> clazz = Class.forName("eu.sealsproject.domain.oet.recommendation.services.ComparisonService");
+					Object inst = clazz.newInstance();
+					comparator = clazz.getMethod(algorithm + "Comparison", Alternative.class, Alternative.class, Requirement.class,
+									DataService.class);
+					Object obj = comparator.invoke(inst,alternatives.get(i), alternatives.get(j), requirement, service);
+					result = Double.parseDouble(obj.toString());
+				} catch (SecurityException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchMethodException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
-//				double result = ComparisonService.compareAlternatives(alternatives.get(i), 
-//						alternatives.get(j),requirement);
+//				double result = ComparisonService.compareAlternativesMaxDistance(alternatives.get(i), 
+//						alternatives.get(j),requirement, service);
 				
-				double result = ComparisonService.compareAlternativesMaxDistance(alternatives.get(i), 
-						alternatives.get(j),requirement, service);
+				if(result == -1)
+					throw new RuntimeException("There was an error in ivoking comparion algorithm "
+							+ "when comparing " + alternatives.get(i).getId() + "to " + alternatives.get(j).getId() + 
+							"with respect to " + requirement.getMeasure().getName());
 				
 				comparison.set(i, j, result);
 				comparison.set(j, i, 1/result);
@@ -234,7 +271,7 @@ public class SupermatrixService {
 	 * @return
 	 */
 	public static Matrix fillSupermatrixWithAlternativesALLComparisons(Matrix supermatrix, 
-			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives,
+			LinkedList<Requirement> requirements, LinkedList<Alternative> alternatives, String algorithm,
 			DataService service) {
 						
 		int k = supermatrix.getRowDimension();
@@ -244,7 +281,7 @@ public class SupermatrixService {
 			String measureUri = supermatrix.getMapping().getCharacteristicUri(i);
 			Requirement requirement = getRequirement(requirements, measureUri, service);
 			AlternativesFactory.addMeasureToAlternatives(alternatives,measureUri, service);
-			Matrix mat = compareAlternatives(requirement,alternatives, service);	
+			Matrix mat = compareAlternatives(requirement,alternatives, algorithm, service);	
 						
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().

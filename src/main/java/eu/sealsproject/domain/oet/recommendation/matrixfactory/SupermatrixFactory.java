@@ -246,7 +246,7 @@ public class SupermatrixFactory {
 		}
 				
 		this.alternatives = AlternativesFactory.createAlternativesList(requirements, service);
-		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(supermatrixMatrix,requirements,this.alternatives,service,compareOnlyRequirements);
+		Matrix supermatrix = SupermatrixService.fillSupermatrixWithAlternatives(supermatrixMatrix,requirements,this.alternatives,config.getProperty("comparisonAlgorithm"),service,compareOnlyRequirements);
 		initializeClusterMatrix(requirements, supermatrix, service,compareOnlyRequirements);
 		return supermatrix;
 	}
