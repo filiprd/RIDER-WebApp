@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 import com.ibm.icu.text.UTF16.StringComparator;
 
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
 
 public class QualityMeasureComparator implements Comparator<QualityMeasure>{
 

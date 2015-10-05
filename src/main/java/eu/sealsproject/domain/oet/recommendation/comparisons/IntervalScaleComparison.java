@@ -7,9 +7,9 @@ import java.util.Locale;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.AlternativeComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.Satisfiable;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.IntervalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.RankingFunction;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.IntervalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.RankingFunction;
 
 public class IntervalScaleComparison implements  AlternativeComparison, Satisfiable{
 

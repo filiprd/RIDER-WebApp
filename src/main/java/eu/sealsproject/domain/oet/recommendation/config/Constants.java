@@ -4,14 +4,11 @@ public class Constants {
 
 	public static final String FOAF_NS = "http://xmlns.com/foaf/0.1/";
 	public static final String DC_ELEMENTS_NS = "http://purl.org/dc/elements/1.1/";
+	public static final String DC_TERMS_NS = "http://purl.org/dc/terms/";
 	public static final String RDFS_NS = "http://www.w3.org/2000/01/rdf-schema#";
 	public static final String RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-	public static final String SEALS_METADATA_NS = "http://www.seals-project.eu/ontologies/SEALSMetadata.owl#";
-	public static final String QUALITY_MODEL_NS = "http://www.seals-project.eu/ontologies/QualityModel.owl#";
-	public static final String MUO = "http://idi.fundacionctic.org/muo/muo-vocab.owl#";
-	
-	//ToolVersion Uris
-	public static final String PROTEGE_OWL_VERSION_1 = "http://www.seals-project.eu/ontologies/SEALSMetadata.owl#ProtegeOWLVersion1";
-	public static final String PROTEGE_4_VERSION_1 = "http://www.seals-project.eu/ontologies/SEALSMetadata.owl#Protege4Version1";
-	public static final String OWL_API_VERSION_1 = "http://www.seals-project.eu/ontologies/SEALSMetadata.owl#OWLAPIVersion1";
+	public static final String QMO_NS = "http://purl.org/net/QualityModel#";
+	public static final String EVAL_NS = "http://purl.org/net/EvaluationResult#";
+	public static final String OM_NS = "http://www.wurvoc.org/vocabularies/om-1.8/";
+	public static final String TIME = "http://www.w3.org/2006/time#";
 }

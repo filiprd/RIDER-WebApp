@@ -7,8 +7,8 @@ import org.apache.tapestry5.annotations.Property;
 import org.apache.tapestry5.ioc.annotations.Inject;
 
 import eu.sealsproject.domain.oet.recommendation.core.spring.SpringBean;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 
 public class ToolResults {
@@ -19,7 +19,7 @@ public class ToolResults {
 	
 	@Property
 	@Persist
-	private ToolVersion toolVersion;
+	private EvaluationSubject evaluationSubject;
 	
 	@Property
 	private QualityValue _qualityValue;
@@ -28,17 +28,10 @@ public class ToolResults {
 	@Persist
 	private Collection<QualityValue> qualityValues;
 	
-	public ToolResults showResults(String toolVersionUri){
-		this.toolVersion = service.getToolVersion(toolVersionUri);
-		this.qualityValues = service.getResultsForTool(toolVersionUri);
+	public ToolResults showResults(String evaluationSubjectUri){
+		this.evaluationSubject = service.getEvaluationSubjectObject(evaluationSubjectUri);
+		this.qualityValues = service.getResultsForEvaluationSubject(evaluationSubjectUri);
 		return this;
 	}
 	
-	public boolean hasVersion(ToolVersion toolVersion){
-		if(toolVersion.getVersionNumber().equalsIgnoreCase(""))
-			return false;
-		if(toolVersion.getVersionNumber() == null)
-			return false;
-		return true;
-	}
 }

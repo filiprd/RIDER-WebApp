@@ -1,4 +1,4 @@
-package eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel;
+package eu.sealsproject.domain.oet.recommendation.domain.ontology.om;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -7,10 +7,11 @@ import thewebsemantic.Namespace;
 import thewebsemantic.RdfProperty;
 import thewebsemantic.RdfType;
 import eu.sealsproject.domain.oet.recommendation.config.Constants;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.OrdinalScaleItem;
 
-@Namespace(Constants.QUALITY_MODEL_NS)
-@RdfType("OrdinalScale")
-public class OrdinalScale extends Scale {
+@Namespace(Constants.OM_NS)
+@RdfType("Ordinal_scale")
+public class OrdinalScale extends MeasurementScale {
 
 	/**
 	 * 
@@ -24,7 +25,7 @@ public class OrdinalScale extends Scale {
 		ordinalScaleItems = new LinkedList<OrdinalScaleItem>();
 	}
 
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "hasOrdinalScaleItem")
+	@RdfProperty(Constants.QMO_NS + "hasOrdinalScaleItem")
 	public Collection<OrdinalScaleItem> getOrdinalScaleItems() {
 		return ordinalScaleItems;
 	}

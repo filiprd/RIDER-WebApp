@@ -1,4 +1,4 @@
-package eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel;
+package eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo;
 
 import java.net.URI;
 
@@ -7,44 +7,42 @@ import thewebsemantic.RdfProperty;
 import thewebsemantic.RdfType;
 import eu.sealsproject.domain.oet.recommendation.config.Constants;
 import eu.sealsproject.domain.oet.recommendation.domain.general.Resource;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.MeasurementScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.UnitOfMeasure;
 
 /**
  * A quality measure representation. 
  * @author Filip
  *
  */
-@Namespace(Constants.QUALITY_MODEL_NS)
+@Namespace(Constants.QMO_NS)
 @RdfType("QualityMeasure")
 public class QualityMeasure extends Resource{
 
 	private static final long serialVersionUID = 4817716974281659695L;
-	
-	private ToolCategory toolCategory;
 
 	/**
 	 * Name of the quality measure.
 	 */
 	private String name;
 	
+	private String description;
+	
 	/**
 	 * Quality measure scale.
 	 */
-	private Scale scale;
+	private MeasurementScale scale;
 	
 	/**
 	 * Unit of measurement.
 	 */
-	private UnitOfMeasurement measurmentUnit;
+	private UnitOfMeasure measurmentUnit;
 	
 	/**
 	 * Quality characteristic that is measured with this quality measure 
 	 */
 	private QualityCharacteristic qualityCharacteristic;
 	
-	//this property is a stupid hack used to extract the quality measures for the types of tools 
-	//for which there are no results. Once the real results are available, this should not be in the rdf.
-//	private ToolCategory toolCategory;
 	
 	/**
 	 * This construction is deprecated. Use QualityMeasure(String name, Scale scale, String measurmentUnit)
@@ -60,17 +58,18 @@ public class QualityMeasure extends Resource{
 		super(uri);
 	}
 
-	public QualityMeasure(URI uri,String name, Scale scale, UnitOfMeasurement measurmentUnit, 
+	public QualityMeasure(URI uri,String name, MeasurementScale scale, UnitOfMeasure measurmentUnit, 
 			QualityCharacteristic characteristic) {
 		this.uri = uri;
 		this.name = name;
 		this.scale = scale;
 		this.measurmentUnit = measurmentUnit;
 		this.qualityCharacteristic = characteristic;
-		characteristic.addQualityMeasure(this);
+		if(this instanceof QualityIndicator)
+			characteristic.addQualityIndicator((QualityIndicator)this);
 	}
 
-	@RdfProperty("http://purl.org/dc/terms/title")
+	@RdfProperty(Constants.DC_TERMS_NS + "title")
 	public String getName() {
 		return name;
 	}
@@ -79,46 +78,46 @@ public class QualityMeasure extends Resource{
 		this.name = name;
 	}
 
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "hasScale")
-	public Scale getScale() {
+	@RdfProperty(Constants.DC_TERMS_NS + "description")
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	@RdfProperty(Constants.QMO_NS + "hasScale")
+	public MeasurementScale getScale() {
 		return scale;
 	}
 
-	public void setScale(Scale scale) {
+	public void setScale(MeasurementScale scale) {
 		this.scale = scale;
 	}
 
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "hasMeasurmentUnit")
-	public UnitOfMeasurement getMeasurmentUnit() {
+	@RdfProperty(Constants.QMO_NS + "hasUnitOfMeasurement")
+	public UnitOfMeasure getMeasurmentUnit() {
 		return measurmentUnit;
 	}
 
-	public void setMeasurmentUnit(UnitOfMeasurement measurmentUnit) {
+	public void setMeasurmentUnit(UnitOfMeasure measurmentUnit) {
 		this.measurmentUnit = measurmentUnit;
 	}
 	
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "measuresCharacteristic")
+	@RdfProperty(Constants.QMO_NS + "measuresCharacteristic")
 	public QualityCharacteristic getQualityCharacteristic() {
 		return qualityCharacteristic;
 	}
 
 	public void setQualityCharacteristic(QualityCharacteristic qualityCharacteristic) {
 		this.qualityCharacteristic = qualityCharacteristic;
-		this.qualityCharacteristic.addQualityMeasure(this);
+		if(this instanceof QualityIndicator)
+			this.qualityCharacteristic.addQualityIndicator((QualityIndicator)this);
 	}
 
 	public String toString(){
 		return getName();
-	}
-
-	public void setToolCategory(ToolCategory oNTOLOGYENGINEERINGTOOL) {
-		this.toolCategory = oNTOLOGYENGINEERINGTOOL;
-		
-	}
-
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "forToolCategory")
-	public ToolCategory getToolCategory() {
-		return toolCategory;
 	}
 
 }

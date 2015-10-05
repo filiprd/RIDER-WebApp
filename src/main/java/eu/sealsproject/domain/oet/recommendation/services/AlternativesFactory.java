@@ -1,67 +1,64 @@
 package eu.sealsproject.domain.oet.recommendation.services;
 
 import java.util.LinkedList;
-
-
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.SubjectCategory;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 
 public class AlternativesFactory {
 	
-//	public static DataService service = new DataService();
 
 	public static LinkedList<Alternative> createAlternativesList(LinkedList<Requirement> requirements, DataService service){
-		LinkedList<ToolCategory> toolCategories = new LinkedList<ToolCategory>();
+		LinkedList<SubjectCategory> subjectCategories = new LinkedList<SubjectCategory>();
 		LinkedList<Alternative> alternatives = new LinkedList<Alternative>();
 		
 		for (Requirement requirement : requirements) {
-			ToolCategory toolCategory = requirement.getMeasure().getToolCategory();
-			if(!toolCategories.contains(toolCategory))
-				toolCategories.add(toolCategory);
+			SubjectCategory subjectCategory = service.getSubjectCategory(requirement.getIndicator().getUri().toString());
+			if(!subjectCategories.contains(subjectCategory))
+				subjectCategories.add(subjectCategory);
 		}
 		
-		if(toolCategories.size() == 1){
-			for (ToolVersion toolVersion : service.getToolVersions(toolCategories.get(0).getUri().toString())) {	
-				toolVersion.setQualityValues(service.getQualityValuesForRequirements(toolVersion.getUri().toString(),
-						requirements));
+		if(subjectCategories.size() == 1){
+			for (EvaluationSubject evaluationSubject : service.getEvaluationSubjects(subjectCategories.get(0).getUri().toString())) {	
+//				evaluationSubject.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject.getUri().toString(),
+//						requirements));
 				Alternative alternative = new Alternative();
-				alternative.addTool(toolVersion);
+				alternative.addEvaluationSubject(evaluationSubject);
 				alternatives.add(alternative);
 			}
 		}
 		
-		if(toolCategories.size() == 2){
-			for (ToolVersion toolVersion1 : service.getToolVersions(toolCategories.get(0).getUri().toString())) {	
-				toolVersion1.setQualityValues(service.getQualityValuesForRequirements(toolVersion1.getUri().toString(),
-						requirements));
-				for (ToolVersion toolVersion2 : service.getToolVersions(toolCategories.get(1).getUri().toString())) {
-					toolVersion2.setQualityValues(service.getQualityValuesForRequirements(toolVersion2.getUri().toString(),
-							requirements));
+		if(subjectCategories.size() == 2){
+			for (EvaluationSubject evaluationSubject1 : service.getEvaluationSubjects(subjectCategories.get(0).getUri().toString())) {	
+//				evaluationSubject1.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject1.getUri().toString(),
+//						requirements));
+				for (EvaluationSubject evaluationSubject2 : service.getEvaluationSubjects(subjectCategories.get(1).getUri().toString())) {
+//					evaluationSubject2.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject2.getUri().toString(),
+//							requirements));
 					Alternative alternative = new Alternative();
-					alternative.addTool(toolVersion1);
-					alternative.addTool(toolVersion2);
+					alternative.addEvaluationSubject(evaluationSubject1);
+					alternative.addEvaluationSubject(evaluationSubject2);
 					alternatives.add(alternative);
 				}
 			}
 		}
 		
-		if(toolCategories.size() == 3){
-			for (ToolVersion toolVersion1 : service.getToolVersions(toolCategories.get(0).getUri().toString())) {	
-				toolVersion1.setQualityValues(service.getQualityValuesForRequirements(toolVersion1.getUri().toString(),
-						requirements));
-				for (ToolVersion toolVersion2 : service.getToolVersions(toolCategories.get(1).getUri().toString())) {
-					toolVersion2.setQualityValues(service.getQualityValuesForRequirements(toolVersion2.getUri().toString(),
-							requirements));
-					for (ToolVersion toolVersion3 : service.getToolVersions(toolCategories.get(2).getUri().toString())) {
-						toolVersion3.setQualityValues(service.getQualityValuesForRequirements(toolVersion3.getUri().toString(),
-								requirements));
+		if(subjectCategories.size() == 3){
+			for (EvaluationSubject evaluationSubject1 : service.getEvaluationSubjects(subjectCategories.get(0).getUri().toString())) {	
+//				evaluationSubject1.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject1.getUri().toString(),
+//						requirements));
+				for (EvaluationSubject evaluationSubject2 : service.getEvaluationSubjects(subjectCategories.get(1).getUri().toString())) {
+//					evaluationSubject2.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject2.getUri().toString(),
+//							requirements));
+					for (EvaluationSubject evaluationSubject3 : service.getEvaluationSubjects(subjectCategories.get(2).getUri().toString())) {
+//						evaluationSubject3.setQualityValues(service.getQualityValuesForRequirements(evaluationSubject3.getUri().toString(),
+//								requirements));
 						Alternative alternative = new Alternative();
-						alternative.addTool(toolVersion1);
-						alternative.addTool(toolVersion2);
-						alternative.addTool(toolVersion3);
+						alternative.addEvaluationSubject(evaluationSubject1);
+						alternative.addEvaluationSubject(evaluationSubject2);
+						alternative.addEvaluationSubject(evaluationSubject3);
 						alternatives.add(alternative);
 					}
 				}
@@ -79,13 +76,12 @@ public class AlternativesFactory {
 	 * @param alternatives
 	 * @param measureUri
 	 */
-	public static void addMeasureToAlternatives(
-			LinkedList<Alternative> alternatives, String measureUri, DataService service) {
+	public static void addMeasureToAlternatives(LinkedList<Alternative> alternatives, String measureUri, DataService service) {
 		
 		for (Alternative alternative : alternatives) {
-			for (ToolVersion toolVersion : alternative.getTools()) {
-				if(service.coversQualityMeasure(toolVersion.getUri().toString(), measureUri))
-					toolVersion.addQualityValue(service.getQualityValue(toolVersion.getUri().toString(), 
+			for (EvaluationSubject evaluationSubject : alternative.getEvaluationSubjects()) {
+				if(service.coversQualityIndicator(evaluationSubject.getUri().toString(), measureUri))
+					evaluationSubject.addQualityValue(service.getQualityValue(evaluationSubject.getUri().toString(), 
 							measureUri));
 			}
 		}

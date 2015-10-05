@@ -17,8 +17,8 @@ public class Sorter {
 		StringComparator comparator = new StringComparator();
 		for (int i = 0; i < requirements.size()-1; i++) {
 			for (int j = i+1; j < requirements.size(); j++) {
-				if(comparator.compare(getImportance(requirements.get(i).getMeasure().getUri().toString(),limitSupermatrix),
-						getImportance(requirements.get(j).getMeasure().getUri().toString(),limitSupermatrix)) < 0){
+				if(comparator.compare(getImportance(requirements.get(i).getIndicator().getUri().toString(),limitSupermatrix),
+						getImportance(requirements.get(j).getIndicator().getUri().toString(),limitSupermatrix)) < 0){
 					Requirement temp = requirements.get(i);
 					requirements.set(i, requirements.get(j));
 					requirements.set(j, temp);

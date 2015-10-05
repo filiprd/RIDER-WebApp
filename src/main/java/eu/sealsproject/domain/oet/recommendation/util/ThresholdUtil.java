@@ -1,12 +1,13 @@
 package eu.sealsproject.domain.oet.recommendation.util;
 
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.IntervalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.NominalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScaleItem;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.RatioScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.Scale;
+import eu.sealsproject.domain.oet.recommendation.config.Constants;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.IntervalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.MeasurementScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.NominalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.OrdinalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.RatioScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.OrdinalScaleItem;
 
 public class ThresholdUtil {
 
@@ -18,13 +19,13 @@ public class ThresholdUtil {
 	 * @return
 	 */
 	public static boolean satisfiesThreshold(QualityValue value, String threshold){
-		Scale scale = value.getForMeasure().getScale();
+		MeasurementScale scale = value.getForMeasure().getScale();
 		
 		if(scale.getClass().getSimpleName().equalsIgnoreCase("RatioScale")){
 			RatioScale ratio = (RatioScale)scale;
 			double r = Double.parseDouble(value.getValue());
 			double t = Double.parseDouble(threshold);
-			if(ratio.getRankingFunction().getUri().toString().equals("http://www.seals-project.eu/ontologies/QualityModel.owl#HigherBest")){
+			if(ratio.getRankingFunction().getUri().toString().equals(Constants.QMO_NS + "HigherBest")){
 				if(r >= t)
 					return true;
 				else
@@ -32,7 +33,7 @@ public class ThresholdUtil {
 			}
 				
 				
-			if(ratio.getRankingFunction().getUri().toString().equals("http://www.seals-project.eu/ontologies/QualityModel.owl#LowerBest")){
+			if(ratio.getRankingFunction().getUri().toString().equals(Constants.QMO_NS + "LowerBest")){
 				if(r <= t)
 					return true;
 				else
@@ -44,7 +45,7 @@ public class ThresholdUtil {
 			IntervalScale interval = (IntervalScale)scale;
 			double r = Double.parseDouble(value.getValue().replace(",", ""));
 			double t = Double.parseDouble(threshold);
-			if(interval.getRankingFunction().getUri().toString().equals("http://www.seals-project.eu/ontologies/QualityModel.owl#HigherBest")){
+			if(interval.getRankingFunction().getUri().toString().equals(Constants.QMO_NS + "HigherBest")){
 				if(r >= t)
 					return true;
 				else
@@ -52,7 +53,7 @@ public class ThresholdUtil {
 			}
 				
 				
-			if(interval.getRankingFunction().getUri().toString().equals("http://www.seals-project.eu/ontologies/QualityModel.owl#LowerBest")){
+			if(interval.getRankingFunction().getUri().toString().equals(Constants.QMO_NS + "LowerBest")){
 				if(r <= t)
 					return true;
 				else
@@ -73,10 +74,10 @@ public class ThresholdUtil {
 			int r = 10;
 			int t = 0;
 			for (OrdinalScaleItem scaleItem : ordinal.getOrdinalScaleItems()) {
-				if(scaleItem.getName().equals(value.getValue()))
-					r = scaleItem.getRanking();
-				if(scaleItem.getName().equals(threshold))
-					t = scaleItem.getRanking();
+				if(scaleItem.getLabel().equals(value.getValue()))
+					r = scaleItem.getOrder();
+				if(scaleItem.getLabel().equals(threshold))
+					t = scaleItem.getOrder();
 			}
 			if(r<=t)			
 				return true;

@@ -7,11 +7,11 @@ import java.util.LinkedList;
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.IntervalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.RankingFunction;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.RatioScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.IntervalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.RatioScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityIndicator;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.RankingFunction;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
@@ -45,7 +45,7 @@ public class SupermatrixService {
 			
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().
-				getRowNumber(requirement.getMeasure().getUri().toString());
+				getRowNumber(requirement.getIndicator().getUri().toString());
 			supermatrix.setMatrixColumn(k, k+alternatives.size()-1, columnIndex, mat);			
 		}
 		
@@ -66,18 +66,18 @@ public class SupermatrixService {
 			Requirement r = requirements.get(i);
 			LinkedList<Requirement> cluster = new LinkedList<Requirement>();
 			cluster.add(r);
-			if(alreadyCompared.contains(r.getMeasure().getQualityCharacteristic().getUri().toString()))
+			if(alreadyCompared.contains(r.getIndicator().getQualityCharacteristic().getUri().toString()))
 				continue;
-			alreadyCompared.add(r.getMeasure().getQualityCharacteristic().getUri().toString());
+			alreadyCompared.add(r.getIndicator().getQualityCharacteristic().getUri().toString());
 			for (int j = i+1; j < requirements.size(); j++) {
-				if(r.getMeasure().getQualityCharacteristic().getUri().
-						equals(requirements.get(j).getMeasure().getQualityCharacteristic().getUri()))
+				if(r.getIndicator().getQualityCharacteristic().getUri().
+						equals(requirements.get(j).getIndicator().getQualityCharacteristic().getUri()))
 					cluster.add(requirements.get(j));
 			}
 			if(cluster.size() == 1){
 				Matrix ones = new Matrix(1,alternatives.size(),1);
 				supermatrix.setMatrixRow(supermatrix.getMapping().getRowNumber(cluster.get(0).
-						getMeasure().getUri().toString()), k, k+alternatives.size()-1, ones);
+						getIndicator().getUri().toString()), k, k+alternatives.size()-1, ones);
 			}
 			else{				
 				for (Alternative alternative : alternatives) {			
@@ -124,7 +124,7 @@ public class SupermatrixService {
 					continue;
 				}
 				double result = ComparisonService.compareCharacteristics(alternative,
-						requirements.get(i), requirements.get(j));
+						requirements.get(i), requirements.get(j), service);
 				comparison.set(i, j, result);
 				comparison.set(j, i, 1/result);
 			}
@@ -157,7 +157,7 @@ public class SupermatrixService {
 					Object inst = clazz.newInstance();
 					comparator = clazz.getMethod(algorithm + "Comparison", Alternative.class, Alternative.class, Requirement.class,
 									DataService.class);
-					Object obj = comparator.invoke(inst,alternatives.get(i), alternatives.get(j), requirement, service);
+					Object obj = comparator.invoke(inst, alternatives.get(i), alternatives.get(j), requirement, service);
 					result = Double.parseDouble(obj.toString());
 				} catch (SecurityException e) {
 					// TODO Auto-generated catch block
@@ -179,7 +179,7 @@ public class SupermatrixService {
 					e.printStackTrace();
 				} catch (InvocationTargetException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					e.getCause().printStackTrace();
 				} catch (InstantiationException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -190,8 +190,8 @@ public class SupermatrixService {
 				
 				if(result == -1)
 					throw new RuntimeException("There was an error in ivoking comparion algorithm "
-							+ "when comparing " + alternatives.get(i).getId() + "to " + alternatives.get(j).getId() + 
-							"with respect to " + requirement.getMeasure().getName());
+							+ "when comparing " + alternatives.get(i).getId() + " to " + alternatives.get(j).getId() + 
+							" with respect to " + requirement.getIndicator().getName());
 				
 				comparison.set(i, j, result);
 				comparison.set(j, i, 1/result);
@@ -230,7 +230,7 @@ public class SupermatrixService {
 		int[] indexes = new int[cluster.size()];
 		int k = 0;
 		for (Requirement requirement : cluster) {
-			indexes[k++] = supermatrix.getMapping().getRowNumber(requirement.getMeasure().
+			indexes[k++] = supermatrix.getMapping().getRowNumber(requirement.getIndicator().
 					getUri().toString());
 		}
 		return indexes;
@@ -239,7 +239,7 @@ public class SupermatrixService {
 	public static LinkedList<String> getRequirementCharacteristicsUris(LinkedList<Requirement> requirements){
 		LinkedList<String> requirementsCharacteristicsUris = new  LinkedList<String>();
 		for (Requirement req : requirements) {
-			String uri = req.getMeasure().getQualityCharacteristic().getUri().toString();
+			String uri = req.getIndicator().getQualityCharacteristic().getUri().toString();
 			if(!requirementsCharacteristicsUris.contains(uri))
 				requirementsCharacteristicsUris.add(uri);
 		}
@@ -252,7 +252,7 @@ public class SupermatrixService {
 		for (MapItem item : supermatrixMapping.getMap()) {
 			if(item.getChracteristicUri().contains("Alternatives"))
 				continue;
-			String uri = service.getCharacteristicUriOfMeasure(
+			String uri = service.getCharacteristicUriOfIndicator(
 					item.getChracteristicUri());
 			if(!requirementsCharacteristicsUris.contains(uri))
 				requirementsCharacteristicsUris.add(uri);
@@ -285,7 +285,7 @@ public class SupermatrixService {
 						
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().
-				getRowNumber(requirement.getMeasure().getUri().toString());
+				getRowNumber(requirement.getIndicator().getUri().toString());
 			supermatrix.setMatrixColumn(k, k+alternatives.size()-1, columnIndex, mat);			
 		}
 		
@@ -307,20 +307,20 @@ public class SupermatrixService {
 			Requirement r = getRequirement(requirements, measureUri, service);
 			LinkedList<Requirement> cluster = new LinkedList<Requirement>();
 			cluster.add(r);
-			if(alreadyCompared.contains(r.getMeasure().getQualityCharacteristic().getUri().toString()))
+			if(alreadyCompared.contains(r.getIndicator().getQualityCharacteristic().getUri().toString()))
 				continue;
-			alreadyCompared.add(r.getMeasure().getQualityCharacteristic().getUri().toString());
+			alreadyCompared.add(r.getIndicator().getQualityCharacteristic().getUri().toString());
 			for (int j = i+1; j < k; j++) {
 				String measureUri2 = supermatrix.getMapping().getCharacteristicUri(j);
 				Requirement r2 = getRequirement(requirements, measureUri2, service);
-				if(r.getMeasure().getQualityCharacteristic().getUri().
-						equals(r2.getMeasure().getQualityCharacteristic().getUri()))
+				if(r.getIndicator().getQualityCharacteristic().getUri().
+						equals(r2.getIndicator().getQualityCharacteristic().getUri()))
 					cluster.add(r2);
 			}
 			if(cluster.size() == 1){
 				Matrix ones = new Matrix(1,alternatives.size(),1);
 				supermatrix.setMatrixRow(supermatrix.getMapping().getRowNumber(cluster.get(0).
-						getMeasure().getUri().toString()), k, k+alternatives.size()-1, ones);
+						getIndicator().getUri().toString()), k, k+alternatives.size()-1, ones);
 			}
 			else{				
 				for (Alternative alternative : alternatives) {			
@@ -348,28 +348,28 @@ public class SupermatrixService {
 	 */
 	private static Requirement getRequirement(LinkedList<Requirement> requirements, String measureUri, DataService service){
 		for (Requirement requirement : requirements) {
-			if(requirement.getMeasure().getUri().toString().equals(measureUri))
+			if(requirement.getIndicator().getUri().toString().equals(measureUri))
 				return requirement;
 		}
 
-		QualityMeasure measure = service.getQualityMeasureObject(measureUri);
-		if(measure.getScale().getClass().getSimpleName().equalsIgnoreCase("RatioScale")){
-			RatioScale scale = (RatioScale) measure.getScale();
+		QualityIndicator indicator = service.getQualityIndicatorObject(measureUri);
+		if(indicator.getScale().getClass().getSimpleName().equalsIgnoreCase("RatioScale")){
+			RatioScale scale = (RatioScale) indicator.getScale();
 			String threshold = "";
 			if(scale.getRankingFunction().equals(RankingFunction.HIGHER_BEST))
 				threshold = "1";
 			if(scale.getRankingFunction().equals(RankingFunction.LOWER_BEST))
 				threshold = "0";
-			return new Requirement(measure,threshold);						
+			return new Requirement(indicator,threshold);						
 		}
-		if(measure.getScale().getClass().getSimpleName().equalsIgnoreCase("IntervalScale")){
-			IntervalScale scale = (IntervalScale) measure.getScale();
+		if(indicator.getScale().getClass().getSimpleName().equalsIgnoreCase("IntervalScale")){
+			IntervalScale scale = (IntervalScale) indicator.getScale();
 			String threshold = "";
 			if(scale.getRankingFunction().equals(RankingFunction.HIGHER_BEST))
-				threshold = String.valueOf(scale.getUpperBoundry());
+				threshold = String.valueOf(scale.getUpperBoundary());
 			if(scale.getRankingFunction().equals(RankingFunction.LOWER_BEST))
-				threshold = String.valueOf(scale.getLowerBoundry());
-			return new Requirement(measure,threshold);								
+				threshold = String.valueOf(scale.getLowerBoundary());
+			return new Requirement(indicator,threshold);								
 		}
 		return null;
 	}

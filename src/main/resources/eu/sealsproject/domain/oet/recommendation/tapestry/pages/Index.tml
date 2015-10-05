@@ -1,5 +1,5 @@
 	
-	<html t:type="layout" title="SEALS recommendation"
+	<html t:type="layout" title="RIDER-WebApp"
 		t:sidebarTitle="SEALS"
 		xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
 		xmlns:p="tapestry:parameter">
@@ -23,14 +23,14 @@
 	<p>${message:greeting}<br /></p>
 	
 	<p>
-		This application allows to select one or more semantic tools according to your concrete quality requirements. If your
-		quality requirements refer to only one type of tool, the recommendation will be for that tool type. In the case that
-		your quality requirements refer to more than one tool type, the recommendation will consist of tool combinations.
+		This application allows to select one or more alternatives according to your concrete quality requirements. If your
+		quality requirements refer to only one category of alternatives, the recommendation will be for that category. In the case that
+		your quality requirements refer to more than one alternative category (if available), the recommendation will consist of category combination.
 		<br />
 		<br />
 		<b>Step 1</b>: Choose which of the available requirements you want to include into the recommendation. 
-						Each requirement represents a quality criteria in the recommendation process, 
-						and is related to a quality measure form the <a t:type="eventlink" t:event="returnPdf" href="#" target="_blank">semantic technology quality model</a>.<br />
+						Each requirement represents a quality criterion in the recommendation process, 
+						and is related to an alternatives quality.<br />
 						For each requirement that you want to include in the recommendation, 
 						you have to specify a threshold, i.e. a desired requirement value.<br />
 		<b>Step 2</b>: Click the "Submit" button, and the page with the results of the recommendation will be shown. <br />
@@ -38,36 +38,6 @@
 				<img src="${asset:context:images/info.png}" width="20" height="20" /> icon.
 	</p>
 	
-	<t:form t:id="toolFilterForm"> <t:errors />
-	
-		<t:checkbox t:id="ontologyEngineeringTools" />
-		<t:label for="ontologyEngineeringTools" />
-		<br />
-		
-		<t:checkbox t:id="ontologyMatchingTools" />
-		<t:label for="ontologyMatchingTools" />
-		<br />
-		
-		<t:checkbox t:id="reasoningSystems" />
-		<t:label for="reasoningSystems" />
-		<br />
-		
-		<t:checkbox t:id="semanticSearchTools" />
-		<t:label for="semanticSearchTools" />
-		<br />
-		
-		<t:checkbox t:id="semanticWebServices" />
-		<t:label for="semanticWebServices" />
-		<br />
-		
-		<t:checkbox t:id="allTools" onclick="this.form.submit();"/>
-		<t:label for="allTools" />
-		<br />
-		
-		<input type="submit" value="Filter" />
-	</t:form>
-	<br />
-	<br />
 	
 	<t:form t:id="resultsFilterForm">
 		<t:checkbox t:id="onlyWithResults" onclick="this.form.submit();"/>
@@ -77,9 +47,6 @@
 	
 	<br />
 	
-	
-	<a t:type="eventlink" t:event="returnPdf" href="#" target="_blank">Quality model reference</a>
-	<br />
 		<br />
 	
 	<t:form t:id="requirementsForm"> 
@@ -91,22 +58,22 @@
 			
 			<p:measureCell>
 					<t:if t:test="isEvaluated">
-						${requirement.measure.name} 
-						<span class="tTip" title="${requirement.measure.description}"><img
+						${requirement.indicator.name} 
+						<span class="tTip" title="${requirement.indicator.description}"><img
 							src="${asset:context:images/info.png}" width="20" height="20" /></span>
 						<p:else>
-							<div class="${requirement.measure.name}, grey">
-						${requirement.measure.name}</div>
+							<div class="${requirement.indicator.name}, grey">
+						${requirement.indicator.name}</div>
 						</p:else>
 					</t:if>			
 			</p:measureCell>
 	
 			<p:toolTypeCell>
 				<t:if t:test="isEvaluated">
-					${requirement.measure.toolCategory.name} 
+					${getSubjectCategoryName(requirement.indicator.uri)} 
 					<p:else>
-						<div class="${toolCategory}, grey">
-							${requirement.measure.toolCategory.name}  </div>
+						<div class="${subjectCategory}, grey">
+							${getSubjectCategoryName(requirement.indicator.uri)}  </div>
 					</p:else>
 				</t:if>
 			</p:toolTypeCell>
@@ -118,13 +85,13 @@
 						<t:if t:test="ratio">
 							<t:select t:id="ratio"
 								model="literal:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100"
-								value="requirement.threshold" /> ${requirement.measure.measurmentUnit.symbol} 
+								value="requirement.threshold" /> ${requirement.indicator.measurmentUnit.symbol} 
 							<p:else>
 							
 								<t:if t:test="interval">
 									<t:select t:id="interval"
-										model="${getIntervalValues(requirement.measure.scale)}"
-										value="requirement.threshold" /> ${requirement.measure.measurmentUnit.symbol} 
+										model="${getIntervalValues(requirement.indicator.scale)}"
+										value="requirement.threshold" /> ${requirement.indicator.measurmentUnit.symbol} 
 									<p:else>
 										<t:select t:id="thresholdSelectId" model="scaleValues"
 											value="requirement.threshold" />
@@ -135,7 +102,7 @@
 						</t:if>
 						
 					<p:else>
-						<div class="${toolCategory}, grey"><font color="#FF0000">Results N/A</font></div>
+						<div class="${subjectCategory}, grey"><font color="#FF0000">Results N/A</font></div>
 					</p:else>	
 					
 				</t:if>
@@ -150,9 +117,6 @@
 	</t:form>
 	
 	<br />
-	
-	<p>This application has been developed in the <a href="http://www.seals-project.eu/" target="_blank">SEALS European project</a>. 
-		
-	</p>
+
 	
 	</html>

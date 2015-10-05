@@ -4,8 +4,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityCharacteristic;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityCharacteristic;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityIndicator;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
 
 /**
  * 
@@ -24,16 +25,16 @@ public class RequirementsUtil {
 	public static Collection<Requirement> getRequirementsForCharacteristics(Collection<QualityCharacteristic> characteristics){
 		LinkedList<Requirement> requiremetns = new LinkedList<Requirement>();
 		for (QualityCharacteristic qualityCharacteristic : characteristics) {
-			for (QualityMeasure measure : qualityCharacteristic.getQualityMeasures()) {
+			for (QualityIndicator measure : qualityCharacteristic.getQualityIndicators()) {
 				requiremetns.add(new Requirement(measure, null));
 			}
 		}
 		return requiremetns;
 	}
 	
-	public static Collection<Requirement> getRequirementsForMeasures(Collection<QualityMeasure> measures){
+	public static Collection<Requirement> getRequirementsForMeasures(Collection<QualityIndicator> measures){
 		LinkedList<Requirement> requiremetns = new LinkedList<Requirement>();
-		for (QualityMeasure measure : measures) {
+		for (QualityIndicator measure : measures) {
 			requiremetns.add(new Requirement(measure, null));
 		}
 		return requiremetns;

@@ -6,12 +6,8 @@
         
         <t:pagelink page="recommendation">back</t:pagelink> <br/>
                 
-        <p>Evaluation results obtained for <b>${toolVersion.name}</b>
-	        <t:if t:test="${hasVersion(toolVersion)}">
-	        	, Version <b>${toolVersion.versionNumber}</b><br/>
-	        </t:if>
-        
-       
+        <p>Evaluation results obtained for <b>${evaluationSubject.name}</b>
+
         </p>
         
          <t:grid source="qualityValues" row="qualityValue" add="measureName" reorder="measureName" exclude="description">

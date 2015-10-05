@@ -6,12 +6,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 import eu.sealsproject.domain.oet.recommendation.config.Constants;
+import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityCharacteristic;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.SubjectCategory;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityCharacteristic;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityIndicator;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
 import eu.sealsproject.domain.oet.recommendation.services.repository.datalookup.OntModelQueryService;
 import eu.sealsproject.domain.oet.recommendation.services.repository.ontology.AbstractServiceImpl;
 import eu.sealsproject.domain.oet.recommendation.util.comparators.QualityCharacteristicComparator;
@@ -29,32 +31,28 @@ public class DataService extends AbstractServiceImpl {
 	public void setQueryService(OntModelQueryService queryService) {
 		this.queryService = queryService;
 	}
-	
 		
 	
 	/**
-	 * Checks if the tool version covers the specific quality measure
-	 * @param tool
-	 * @param measure
+	 * Checks if the evaluation subject covers the specific quality measure
+	 * @param evaluationSubjectUri
+	 * @param qualityIndicatorUri
 	 * @return
 	 */
-	public boolean coversQualityMeasure(String toolVersionUri,
-			String measureUri) {
+	public boolean coversQualityIndicator(String evaluationSubjectUri,
+			String qualityIndicatorUri) {
 
-		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX muo: <"+Constants.MUO+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
+		String queryString = 		
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?qvalue \n" +
 			"WHERE {\n" +
-			"      ?qvalue rdf:type muo:QualityValue; \n" +
-			"      qmo:forMeasure <"+measureUri+">; \n" +
-			"      qmo:obtainedFrom ?request. \n" +
+			"      ?qvalue rdf:type eval:QualityValue; \n" +
+			"      eval:forMeasure <"+qualityIndicatorUri+">; \n" +
+			"      eval:obtainedFrom ?evaluation. \n" +
 			
-			"      ?request rdf:type smd:ExecutionRequest; \n" +
-			"      smd:evaluatesTool <"+toolVersionUri+">; \n" +
+			"      ?evaluation rdf:type eval:Evaluation; \n" +
+			"      eval:evaluatedSubject <"+evaluationSubjectUri+">; \n" +
 
 			"      }";
 
@@ -72,32 +70,27 @@ public class DataService extends AbstractServiceImpl {
 
 	
 	/**
-	 * Returns the the quality measure of the specific tool
-	 * @param tool
-	 * @param measure
+	 * Returns the the quality measure of the specific evaluation subject
+	 * @param evaluationSubjectUri
+	 * @param qualityIndicatorUri
 	 * @return
 	 */
-	public QualityValue getQualityValue(String toolVersionUri,
-			String measureUri) {
+	public QualityValue getQualityValue(String evaluationSubjectUri,
+			String qualityIndicatorUri) {
 
-		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX muo: <"+Constants.MUO+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
-			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-			"SELECT DISTINCT ?qvalue \n" +
-			"WHERE {\n" +
-			"      ?qvalue rdf:type muo:QualityValue; \n" +
-			"      qmo:forMeasure <"+measureUri+">; \n" +
-			"      qmo:obtainedFrom ?request. \n" +
-			
-			"      ?request rdf:type smd:ExecutionRequest; \n" +
-			"      smd:evaluatesTool <"+toolVersionUri+">; \n" +
+		String queryString = 		
+				"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+				"SELECT DISTINCT ?qvalue \n" +
+				"WHERE {\n" +
+				"      ?qvalue rdf:type eval:QualityValue; \n" +
+				"      eval:forMeasure <"+qualityIndicatorUri+">; \n" +
+				"      eval:obtainedFrom ?evaluation. \n" +
+				
+				"      ?evaluation rdf:type eval:Evaluation; \n" +
+				"      eval:evaluatedSubject <"+evaluationSubjectUri+">; \n" +
 
-			"      }";
-
-//		System.out.println(queryString);
+				"      }";
 
 		Collection<String> qualityValueUris = queryService
 				.executeOneVariableSelectSparqlQuery(queryString, "qvalue",
@@ -121,21 +114,21 @@ public class DataService extends AbstractServiceImpl {
 	
 	/**
 	 * Returns the Uri of the quality characteristic that is measured by the quality measure
-	 * @param measureUri Uri of the quality measure
+	 * @param qualityIndicatorUri Uri of the quality measure
 	 * @return
 	 */
-	public String getCharacteristicUriOfMeasure(String measureUri) {
+	public String getCharacteristicUriOfIndicator(String qualityIndicatorUri) {
 		
-		if(measureUri.contains("Alternatives"))
+		if(qualityIndicatorUri.contains("Alternatives"))
 			return "Alternatives";
 		
 		String queryString = 
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
+			"PREFIX qmo: <"+Constants.QMO_NS+">\n " +			
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?uri \n" +
 			"WHERE {\n" +
-			"      <"+measureUri+"> rdf:type qmo:QualityMeasure; \n" +
+			"      <"+qualityIndicatorUri+"> rdf:type qmo:QualityIndicator; \n" +
 			"      qmo:measuresCharacteristic ?uri. \n" +
 			"      }";
 
@@ -151,45 +144,41 @@ public class DataService extends AbstractServiceImpl {
 
 	
 	/**
-	 * Returns the tool category of which tools are evaluated with the quality measure
-	 * @param measureUri Uri of the quality measure
+	 * Returns the subject category of which evaluation subjects are evaluated with the quality measure
+	 * @param qualityIndicatorUri Uri of the quality measure
 	 * @return
 	 */
-	public ToolCategory getToolCategory(String measureUri) {
+	public SubjectCategory getSubjectCategory(String qualityIndicatorUri) {
 		
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX muo: <"+Constants.MUO+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
+			"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +			
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-			"SELECT DISTINCT ?toolCategoryUri \n" +
+			"SELECT DISTINCT ?subjectCategoryUri \n" +
 			"WHERE {\n" +
-			"      ?qvalue rdf:type muo:QualityValue; \n" +
-			"      qmo:forMeasure <"+measureUri+">; \n" +
-			"      qmo:obtainedFrom ?request. \n" +
+			"      ?qvalue rdf:type eval:QualityValue; \n" +
+			"      eval:forMeasure <"+qualityIndicatorUri+">; \n" +
+			"      eval:obtainedFrom ?evaluation. \n" +
 			
-			"      ?request rdf:type smd:ExecutionRequest; \n" +
-			"      smd:evaluatesTool ?toolVersion. \n" +
+			"      ?evaluation rdf:type eval:Evaluation; \n" +
+			"      eval:evaluatedSubject ?evaluationSubject. \n" +
 			
-			"      ?toolVersion rdf:type smd:ToolVersion; \n" +
-			"      smd:isToolVersionOf ?tool. \n" +
-			
-			"      ?tool rdf:type smd:Tool; \n" +
-			"      smd:hasToolCategory ?toolCategoryUri. \n" +
+			"      ?evaluationSubject rdf:type eval:EvaluationSubject; \n" +
+			"      eval:belongsToCategory ?subjectCategoryUri. \n" +
 
 			"      }";
 
 //		System.out.println(queryString);
 
-		Collection<String> toolCategoriesUris = queryService
-				.executeOneVariableSelectSparqlQuery(queryString, "toolCategoryUri",
+		Collection<String> subjectCategoryUris = queryService
+				.executeOneVariableSelectSparqlQuery(queryString, "subjectCategoryUri",
 						getDataModel());
+
 		
-		Collection<ToolCategory> col = null;
+		Collection<SubjectCategory> col = null;
 		try {
-			col = loadResourcesByURIs(ToolCategory.class,
-					toolCategoriesUris, true);
+			col = loadResourcesByURIs(SubjectCategory.class,
+					subjectCategoryUris, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -199,39 +188,36 @@ public class DataService extends AbstractServiceImpl {
 		return null;
 	}
 
+	
 	/**
-	 * Returns all tool versions that belong to a tool category
-	 * @param toolCategoryUri Uri of the tool category
+	 * Returns all evaluation subjects that belong to a subject category
+	 * @param subjectCategoryUri Uri of the subject category
 	 * @return
 	 */
-	public Collection<ToolVersion> getToolVersions(String toolCategoryUri) {
+	public Collection<EvaluationSubject> getEvaluationSubjects(String subjectCategoryUri) {
 
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
+			"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +					
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-			"SELECT DISTINCT ?toolVersionUri \n" +
+			"SELECT DISTINCT ?evaluationSubjectUri \n" +
 			"WHERE {\n" +
 			
-			"      ?toolVersionUri rdf:type smd:ToolVersion; \n" +
-			"      smd:isToolVersionOf ?tool. \n" +
-			
-			"      ?tool rdf:type smd:Tool; \n" +
-			"      smd:hasToolCategory <"+toolCategoryUri+">. \n" +
+			"      ?evaluationSubjectUri rdf:type eval:EvaluationSubject; \n" +
+			"      eval:belongsToCategory <"+subjectCategoryUri+">. \n" +
 
 			"      }";
 
 //		System.out.println(queryString);
 
-		Collection<String> toolVersionsUris = queryService
-				.executeOneVariableSelectSparqlQuery(queryString, "toolVersionUri",
+		Collection<String> evaluationSubjectUris = queryService
+				.executeOneVariableSelectSparqlQuery(queryString, "evaluationSubjectUri",
 						getDataModel());
 		
-		Collection<ToolVersion> col = null;
+		Collection<EvaluationSubject> col = null;
 		try {
-			col = loadResourcesByURIs(ToolVersion.class,
-					toolVersionsUris, true);
+			col = loadResourcesByURIs(EvaluationSubject.class,
+					evaluationSubjectUris, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -247,8 +233,7 @@ public class DataService extends AbstractServiceImpl {
 	 */
 	public Collection<QualityCharacteristic> getAllQualityCharacteristics() {		
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
+			"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?uri " +
 			"WHERE {\n" +
@@ -272,39 +257,40 @@ public class DataService extends AbstractServiceImpl {
 		Collections.sort((List<QualityCharacteristic>) col, new QualityCharacteristicComparator());
 		
 		for (QualityCharacteristic qualityCharacteristic : col) {
-			qualityCharacteristic.setQualityMeasures(getQualityMeasuresForCharacteristic(
+			qualityCharacteristic.setQualityIndicators(getQualityIndicatorsForCharacteristic(
 					qualityCharacteristic.getUri().toString()));
 			
-			Collections.sort((List<QualityMeasure>) qualityCharacteristic.getQualityMeasures(), 
+			Collections.sort((List<QualityIndicator>) qualityCharacteristic.getQualityIndicators(), 
 					new QualityMeasureComparator());
 		}
+		
+		System.out.println(col.iterator().next().getSubjectCategory().getName());
 		
 		return col;
 	}
 	
 		
-	public Collection<QualityMeasure> getQualityMeasuresForCharacteristic(String characteristicUri) {
+	public Collection<QualityIndicator> getQualityIndicatorsForCharacteristic(String characteristicUri) {
 		
 		String queryString = 
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
+			"PREFIX qmo: <"+Constants.QMO_NS+">\n " +			
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?uri \n" +
 			"WHERE {\n" +
-			"      ?uri rdf:type qmo:QualityMeasure; \n" +
+			"      ?uri rdf:type qmo:QualityIndicator; \n" +
 			"      qmo:measuresCharacteristic <"+ characteristicUri + ">. \n" +
 			"      }";
 
 //		System.out.println(queryString);
 
-		Collection<String> qualityMeasureUris = queryService
+		Collection<String> qualityIndicatorUris = queryService
 				.executeOneVariableSelectSparqlQuery(queryString, "uri",
 						getDataModel());
 		
-		Collection<QualityMeasure> col = null;
+		Collection<QualityIndicator> col = null;
 		try {
-			col = loadResourcesByURIs(QualityMeasure.class,
-					qualityMeasureUris, true);
+			col = loadResourcesByURIs(QualityIndicator.class,
+					qualityIndicatorUris, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -318,29 +304,8 @@ public class DataService extends AbstractServiceImpl {
 	 * @param string
 	 * @return
 	 */
-	public boolean isEvaluated(String qualityMeasureUri) {
-//		String queryString = 
-//			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-//			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-//			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +			
-//			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-//			"SELECT DISTINCT ?qvalue \n" +
-//			"WHERE {\n" +
-//			"      ?qvalue rdf:type qmo:QualityValue; \n" +
-//			"      qmo:forMeasure <"+qualityMeasureUri+">; \n" +
-//			"      }";
-//
-//		System.out.println(queryString);
-//
-//		Collection<String> qualityValueUris = queryService
-//				.executeOneVariableSelectSparqlQuery(queryString, "qvalue",
-//						getDataModel());
-//		
-//		if(qualityValueUris.isEmpty())
-//			return false;
-//		return true;
-		
-		if(getToolCategory(qualityMeasureUri)==null)
+	public boolean isEvaluated(String qualityIndicatorUri) {
+		if(getSubjectCategory(qualityIndicatorUri)==null)
 			return false;
 		return true;
 	}
@@ -351,17 +316,16 @@ public class DataService extends AbstractServiceImpl {
 	//-------------------------------------------
 	
 	/**
-	 * Returns all categories of tools that are evaluated
+	 * Returns all subject categories that are evaluated
 	 * @return
 	 */
-	public Collection<ToolCategory> getToolCategories() {		
+	public Collection<SubjectCategory> getSubjectCategories() {		
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?uri " +
 			"WHERE {\n" +
-			"      ?uri rdf:type smd:ToolCategory. \n" +
+			"      ?uri rdf:type eval:SubjectCategory. \n" +
 			"      }";
 
 //		System.out.println(queryString);
@@ -370,9 +334,9 @@ public class DataService extends AbstractServiceImpl {
 				.executeOneVariableSelectSparqlQuery(queryString, "uri",
 						getDataModel());
 
-		Collection<ToolCategory> col = null;
+		Collection<SubjectCategory> col = null;
 		try {
-			col = loadResourcesByURIs(ToolCategory.class,
+			col = loadResourcesByURIs(SubjectCategory.class,
 					toolCategoriUris, true);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -389,30 +353,30 @@ public class DataService extends AbstractServiceImpl {
 		return col;
 	}
 	
-	public ToolVersion getToolVersion(String toolVersionUri) {
-		ToolVersion toolVersion = null;
+	
+	public EvaluationSubject getEvaluationSubjectObject(String evaluationSubjectUri) {
+		EvaluationSubject evaluationSubject = null;
 		try {
-			toolVersion = loadResourceByURI(ToolVersion.class,
-					toolVersionUri, true);
+			evaluationSubject = loadResourceByURI(EvaluationSubject.class,
+					evaluationSubjectUri, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return toolVersion;
+		return evaluationSubject;
 	}
 	
 	
-	public Collection<QualityValue> getResultsForTool(String toolVersionUri) {
+	public Collection<QualityValue> getResultsForEvaluationSubject(String evaluationSubjectUri) {
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX muo: <"+Constants.MUO+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
+			"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
 			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 			"SELECT DISTINCT ?uri " +
 			"WHERE {\n" +
-			"      ?uri rdf:type muo:QualityValue; \n" +
-			"      qmo:obtainedFrom ?evaluation. \n" +
-			"      ?evaluation rdf:type smd:ExecutionRequest; \n" +
-			"      smd:evaluatesTool <"+ toolVersionUri +">. \n" +
+			"      ?uri rdf:type eval:QualityValue; \n" +
+			"      eval:obtainedFrom ?evaluation. \n" +
+			
+			"      ?evaluation rdf:type eval:Evaluation; \n" +
+			"      eval:evaluatedSubject <"+ evaluationSubjectUri +">. \n" +
 			"      }";
 
 //		System.out.println(queryString);
@@ -433,43 +397,54 @@ public class DataService extends AbstractServiceImpl {
 	
 }
 
-	public Collection<QualityMeasure> getQualityMeasuresForToolType(String toolTypeUri) {
+	
+	public Collection<QualityIndicator> getQualityIndicatorsForSubjectCategory(String subjectCategoryUri) {
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-			"SELECT DISTINCT ?uri " +
-			"WHERE {\n" +
-			"      ?uri rdf:type qmo:QualityMeasure; \n" +
-			"      qmo:forToolCategory <" + toolTypeUri + ">. \n" +
-			"      }";
+				"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
+				"PREFIX eval: <"+Constants.EVAL_NS+">\n " +			
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+				"SELECT DISTINCT ?uri \n" +
+				"WHERE {\n" +
+				"      ?qvalue rdf:type eval:QualityValue; \n" +
+				"      eval:forMeasure ?uri; \n" +
+				"      eval:obtainedFrom ?evaluation. \n" +
+				
+				"      ?uri rdf:type qmo:QualityIndicator; \n" +
+				
+				"      ?evaluation rdf:type eval:Evaluation; \n" +
+				"      eval:evaluatedSubject ?evaluationSubject. \n" +
+				
+				"      ?evaluationSubject rdf:type eval:EvaluationSubject; \n" +
+				"      eval:belongsToCategory <"+subjectCategoryUri+">. \n" +
 
+				"      }";
 //		System.out.println(queryString);
 		
 		Collection<String> measuresUri = queryService
 				.executeOneVariableSelectSparqlQuery(queryString, "uri",
 						getDataModel());
 
-		Collection<QualityMeasure> col = null;
+		Collection<QualityIndicator> col = null;
 		try {
-			col = loadResourcesByURIs(QualityMeasure.class,
+			col = loadResourcesByURIs(QualityIndicator.class,
 					measuresUri, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		Collections.sort((List<QualityMeasure>) col, new QualityMeasureComparator());
+		Collections.sort((List<QualityIndicator>) col, new QualityMeasureComparator());
 						
 		return col;
 	}
 
+	
 	public Collection<QualityValue> getQualityValuesForRequirements(
-			String toolVersionUri, LinkedList<Requirement> requirements) {
+			String evaluationSubjectUri, LinkedList<Requirement> requirements) {
 
 		LinkedList<QualityValue> values = new LinkedList<QualityValue>();
 		
 		for (Requirement requirement : requirements) {
-			QualityValue value = getQualityValue(toolVersionUri, requirement.getMeasure().getUri().toString());
+			QualityValue value = getQualityValue(evaluationSubjectUri, requirement.getIndicator().getUri().toString());
 			if(value != null)
 				values.add(value);
 		}
@@ -478,33 +453,43 @@ public class DataService extends AbstractServiceImpl {
 	}
 	
 	
-	
-	public Collection<String> getQualityMeasureUrisForToolType(String toolTypeUri) {
+	public Collection<String> getQualityIndicatorUrisForSubjectCategory(String subjectCategoryUri) {
 		String queryString = 
-			"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-			"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-			"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-			"SELECT DISTINCT ?uri " +
-			"WHERE {\n" +
-			"      ?uri rdf:type qmo:QualityMeasure; \n" +
-			"      qmo:forToolCategory <" + toolTypeUri + ">. \n" +
-			"      }";
+				"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
+				"PREFIX eval: <"+Constants.EVAL_NS+">\n " +			
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+				"SELECT DISTINCT ?uri \n" +
+				"WHERE {\n" +
+				"      ?qvalue rdf:type eval:QualityValue; \n" +
+				"      eval:forMeasure ?uri; \n" +
+				"      eval:obtainedFrom ?evaluation. \n" +
+				
+				"      ?uri rdf:type qmo:QualityIndicator; \n" +
+				
+				"      ?evaluation rdf:type eval:Evaluation; \n" +
+				"      eval:evaluatedSubject ?evaluationSubject. \n" +
+				
+				"      ?evaluationSubject rdf:type eval:EvaluationSubject; \n" +
+				"      eval:belongsToCategory <"+subjectCategoryUri+">. \n" +
+
+				"      }";
 
 //		System.out.println(queryString);
 		
-		Collection<String> measuresUri = queryService
+		Collection<String> indicatorUris = queryService
 				.executeOneVariableSelectSparqlQuery(queryString, "uri",
 						getDataModel());
 
 								
-		return measuresUri;
+		return indicatorUris;
 	}
+
 	
-	public QualityMeasure getQualityMeasureObject(String measureUri) {
-		QualityMeasure m = null;
+	public QualityIndicator getQualityIndicatorObject(String qualityIndicatorUri) {
+		QualityIndicator m = null;
 		try {
-			m = loadResourceByURI(QualityMeasure.class,
-					measureUri, true);
+			m = loadResourceByURI(QualityIndicator.class,
+					qualityIndicatorUri, true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -513,18 +498,17 @@ public class DataService extends AbstractServiceImpl {
 	}
 	
 	
-	public double getResultsDifference(String measureUri) {
+	public double getResultsDifference(String qualityIndicatorUri) {
 		String queryString = 
-				"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
-				"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +	
-				"PREFIX ctic: <"+Constants.MUO+">\n " +	
+				"PREFIX eval: <"+Constants.EVAL_NS+">\n " +
+				"PREFIX qmo: <"+Constants.QMO_NS+">\n " +	
 				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 				"SELECT DISTINCT ?result \n" +
 				"WHERE {\n" +
-				"      ?qv a ctic:QualityValue; \n" +
-				"      ctic:qualityLiteralValue ?result; \n" +
-				"      qmo:forMeasure <"+measureUri+">. \n"    +
-				"      <"+measureUri+"> rdf:type qmo:QualityMeasure. \n" +
+				"      ?qv a eval:QualityValue; \n" +
+				"      eval:hasLiteralValue ?result; \n" +
+				"      eval:forMeasure <"+qualityIndicatorUri+">. \n"    +
+				"      <"+qualityIndicatorUri+"> rdf:type qmo:QualityIndicator. \n" +
 				"      }";
 
 //		System.out.println(queryString);
@@ -547,31 +531,42 @@ public class DataService extends AbstractServiceImpl {
 	}
 
 	
-	public Collection<QualityMeasure> getAllQualityMeasures() {
+	public Collection<QualityIndicator> getAllQualityIndicators() {
 		String queryString = 
-				"PREFIX qmo: <"+Constants.QUALITY_MODEL_NS+">\n " +
-				"PREFIX smd: <"+Constants.SEALS_METADATA_NS+">\n " +
+				"PREFIX qmo: <"+Constants.QMO_NS+">\n " +
 				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 				"SELECT DISTINCT ?uri " +
 				"WHERE {\n" +
-				"      ?uri rdf:type qmo:QualityMeasure. \n" +
+				"      ?uri rdf:type qmo:QualityIndicator. \n" +
 				"      }";
 
 //			System.out.println(queryString);
 			
-			Collection<String> qualityMeasureUris = queryService
+			Collection<String> qualityIndicatorUris = queryService
 					.executeOneVariableSelectSparqlQuery(queryString, "uri",
 							getDataModel());
 
-			Collection<QualityMeasure> col = null;
+			Collection<QualityIndicator> col = null;
 			try {
-				col = loadResourcesByURIs(QualityMeasure.class,
-						qualityMeasureUris, true);
+				col = loadResourcesByURIs(QualityIndicator.class,
+						qualityIndicatorUris, true);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			
 			return col;
+	}
+
+	
+	public QualityValue getQualityValueForAlternative(Alternative alternative,
+			String qualityIndicatorUri) {
+		
+		Collection<EvaluationSubject> evaluationSubjects = alternative.getEvaluationSubjects();
+		for (EvaluationSubject evaluationSubject : evaluationSubjects) {
+			if(coversQualityIndicator(evaluationSubject.getUri().toString(), qualityIndicatorUri))
+				return getQualityValue(evaluationSubject.getUri().toString(), qualityIndicatorUri);
+		}
+		return null;
 	}
 
 

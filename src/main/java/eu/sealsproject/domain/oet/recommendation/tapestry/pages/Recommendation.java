@@ -1,9 +1,15 @@
 package eu.sealsproject.domain.oet.recommendation.tapestry.pages;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Properties;
 
 import org.apache.tapestry5.annotations.InjectPage;
 import org.apache.tapestry5.annotations.OnEvent;
@@ -12,17 +18,15 @@ import org.apache.tapestry5.annotations.Property;
 import org.apache.tapestry5.internal.services.URLEncoderImpl;
 import org.apache.tapestry5.ioc.annotations.Inject;
 
-
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.core.spring.SpringBean;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
-import eu.sealsproject.domain.oet.recommendation.matrixfactory.SupermatrixFactory;
-import eu.sealsproject.domain.oet.recommendation.matrixfactory.WeightedMatrixFactory;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.factories.SupermatrixFactory;
+import eu.sealsproject.domain.oet.recommendation.factories.WeightedMatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 import eu.sealsproject.domain.oet.recommendation.util.ResultsUtil;
 import eu.sealsproject.domain.oet.recommendation.util.Sorter;
@@ -32,6 +36,8 @@ import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 
 
 public class Recommendation {
+	
+	private Properties config;
 	
 	@Inject
 	@SpringBean("RepositoryService")
@@ -59,20 +65,13 @@ public class Recommendation {
 	private Alternative alternative;
 	
 	@Property
-	ToolVersion toolVersion;
+	EvaluationSubject evaluationSubject;
 	
 	@Persist
 	Matrix limitSupermatrix;
 	
 	@Persist
 	private Matrix weightedMatrix;
-	
-	@Inject
-	@SpringBean("visualization")
-	private EvaluationScenariosUtil visualizationUtil;
-	
-	//used to link quality measures with the visualization in visualization app
-	private URLEncoderImpl tapestryUrlEncoder = new URLEncoderImpl();
 	
 	public void onActivate() {
 					
@@ -82,20 +81,12 @@ public class Recommendation {
 		if(requirements != null){
 			this.requirements = requirements;
 			
-			SupermatrixFactory factory = new SupermatrixFactory();
-			Matrix supermatrix = factory.create(requirements, service);
+			loadConfig();
+			if(config.get("mcdm-method").equals("anp"))
+				makeANPRecommendations(requirements);
+//			if(config.get("mcdm-method").equals("ahp"))
+//				makeAHPRecommendations(requirements);
 			
-			recommendations = factory.getAlternatives();
-			
-			Matrix clusterMatrix = factory.getClusterMatrix();
-			
-			this.weightedMatrix = WeightedMatrixFactory.getWeightedMatrix(supermatrix, 
-					clusterMatrix, service);
-			
-			limitSupermatrix  = weightedMatrix.calculateLimitMatrix();
-			
-			Sorter.sort(requirements,limitSupermatrix);
-			ResultsUtil.getRecommendationResults(limitSupermatrix, recommendations);
 		}
 		return this;
 	}
@@ -139,12 +130,12 @@ public class Recommendation {
 		return "";
 	}
 	
-	public QualityValue getQualityValue(Alternative alternative, String qualityMeasureUri){		
-		return alternative.getQualityValue(qualityMeasureUri);
+	public QualityValue getQualityValue(Alternative alternative, String qualityIndicatorUri){		
+		return service.getQualityValueForAlternative(alternative, qualityIndicatorUri);
 	}
 	
-	public boolean satisfiesThreshold(Alternative alternative, String qualityMeasureUri, String threshold){
-		QualityValue value = alternative.getQualityValue(qualityMeasureUri);
+	public boolean satisfiesThreshold(Alternative alternative, String qualityIndicatorUri, String threshold){
+		QualityValue value = service.getQualityValueForAlternative(alternative, qualityIndicatorUri);
 		if(ThresholdUtil.satisfiesThreshold(value, threshold))
 			return true;
 		return false;
@@ -152,39 +143,16 @@ public class Recommendation {
 	
 	public LinkedList<String> getTools(Alternative alternative){
 		LinkedList<String> tools = new LinkedList<String>();
-		for (ToolVersion tool : alternative.getTools()) {
+		for (EvaluationSubject tool : alternative.getEvaluationSubjects()) {
 			tools.add(tool.getName());			
 		}
 		return tools;
 	}
 	
-	public Object onActionFromShowResults(String toolVersionUri){
-		return toolResultsPage.showResults(toolVersionUri);
+	public Object onActionFromShowResults(String evaluationSubjectUri){
+		return toolResultsPage.showResults(evaluationSubjectUri);
 	}
 		
-	public String getUrl(String qualityMeasureUri, String toolName){
-		return visualizationUtil.getUrl(qualityMeasureUri) + "/" +
-		tapestryUrlEncoder.encode(toolName);
-	}
-	
-	public boolean hasVisualization(QualityMeasure measure){
-		String measureUri = measure.getUri().toString();
-		
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#OntologyLanguageComponentCoverage"))
-			return true;
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#OntologyLanguageInterchangeComponentCoverage"))
-			return true;
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#OntologyInformationChange"))
-			return true;
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#InterchangeInformationChange"))
-			return true;
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#ImportExportErrors"))
-			return true;
-		if(measureUri.equalsIgnoreCase("http://www.seals-project.eu/ontologies/QualityModel.owl#OntologyInterchangeErrors"))
-			return true;
-
-		return false;
-	}
 	
 	public boolean lessThanTen(int i){
 		if(i+1 <= 10)
@@ -201,7 +169,7 @@ public class Recommendation {
 	public Object onActionFromExplainImportance(){
 		LinkedList<String> importances = new LinkedList<String>();
 		for (Requirement req : requirements) {
-			importances.add(getImportance(req.getMeasure().getUri().toString()));
+			importances.add(getImportance(req.getIndicator().getUri().toString()));
 		}
 		importanceExplanationPage.setImportance(importances);
 		return importanceExplanationPage.explain(requirements, this.weightedMatrix, recommendations.size());
@@ -219,6 +187,49 @@ public class Recommendation {
 		format.setMaximumFractionDigits(4);
 		format.setMinimumFractionDigits(4);
 		return Double.parseDouble(format.format(result));
+	}
+	
+	private void makeANPRecommendations(LinkedList<Requirement> requirements){
+		SupermatrixFactory factory = new SupermatrixFactory();
+		Matrix supermatrix = factory.create(requirements, service);
+		
+		recommendations = factory.getAlternatives();
+		
+		Matrix clusterMatrix = factory.getClusterMatrix();
+		
+		this.weightedMatrix = WeightedMatrixFactory.getWeightedMatrix(supermatrix, 
+				clusterMatrix, service);
+		
+		limitSupermatrix  = weightedMatrix.calculateLimitMatrix();
+		
+		Sorter.sort(requirements,limitSupermatrix);
+		ResultsUtil.getRecommendationResults(limitSupermatrix, recommendations);
+	}
+	
+	
+//	private void makeAHPRecommendations(LinkedList<Requirement> requirements){
+//		AHPFactory factory = new AHPFactory();
+//		recommendations = factory.getRecommendations(requirements, service);
+//	}
+	
+	
+	/**
+	 * Loads the configuration properties file
+	 */
+	protected void loadConfig(){	
+		URL url = Thread.currentThread().getContextClassLoader()
+		.getResource("config/config.properties");
+		String path = url.getFile();
+		// remove white spaces encoded with %20
+		path = path.replaceAll("%20", " ");
+		this.config = new Properties();
+		try {
+			config.load(new FileInputStream(new File(path)));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 }

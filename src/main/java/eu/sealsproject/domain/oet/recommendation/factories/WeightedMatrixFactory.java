@@ -1,4 +1,4 @@
-package eu.sealsproject.domain.oet.recommendation.matrixfactory;
+package eu.sealsproject.domain.oet.recommendation.factories;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
@@ -24,8 +24,8 @@ public class WeightedMatrixFactory {
 
 	private static double getClusterValue(Matrix clusterMatrix, String measureUri1,
 			String measureUri2, DataService service) {
-		String characteristic1 = service.getCharacteristicUriOfMeasure(measureUri1);
-		String characteristic2 = service.getCharacteristicUriOfMeasure(measureUri2);
+		String characteristic1 = service.getCharacteristicUriOfIndicator(measureUri1);
+		String characteristic2 = service.getCharacteristicUriOfIndicator(measureUri2);
 		return clusterMatrix.get(clusterMatrix.getMapping().getRowNumber(characteristic1), 
 				clusterMatrix.getMapping().getRowNumber(characteristic2));
 	}

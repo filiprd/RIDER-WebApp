@@ -7,16 +7,16 @@ import java.util.Collection;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.AlternativeComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.Satisfiable;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScaleItem;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.OrdinalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.OrdinalScaleItem;
 
 public class OrdinalScaleComparison implements  AlternativeComparison, Satisfiable {
 
 
 	public double compare(QualityValue value1, QualityValue value2, Requirement requirement) {
 		Collection<OrdinalScaleItem> values = (OrdinalScale.class.cast(requirement
-				.getMeasure().getScale()).getOrdinalScaleItems());
+				.getIndicator().getScale()).getOrdinalScaleItems());
 		String result1 = (String)value1.getValue();
 		String result2 = (String)value2.getValue();
 		String threshold = requirement.getThreshold();
@@ -25,12 +25,12 @@ public class OrdinalScaleComparison implements  AlternativeComparison, Satisfiab
 		int thresholdRanking = 0;
 		
 		for (OrdinalScaleItem ordinalScaleItem : values) {
-			if(ordinalScaleItem.getName().equalsIgnoreCase(threshold))
-				thresholdRanking = ordinalScaleItem.getRanking();
-			if(ordinalScaleItem.getName().equalsIgnoreCase(result1))
-				resultRanking1 = ordinalScaleItem.getRanking();
-			if(ordinalScaleItem.getName().equalsIgnoreCase(result2))
-				resultRanking2 = ordinalScaleItem.getRanking();
+			if(ordinalScaleItem.getLabel().equalsIgnoreCase(threshold))
+				thresholdRanking = ordinalScaleItem.getOrder();
+			if(ordinalScaleItem.getLabel().equalsIgnoreCase(result1))
+				resultRanking1 = ordinalScaleItem.getOrder();
+			if(ordinalScaleItem.getLabel().equalsIgnoreCase(result2))
+				resultRanking2 = ordinalScaleItem.getOrder();
 		}
 		
 		if(resultRanking1 <= thresholdRanking && thresholdRanking < resultRanking2)
@@ -60,17 +60,17 @@ public class OrdinalScaleComparison implements  AlternativeComparison, Satisfiab
 			Requirement requirement) {
 
 		Collection<OrdinalScaleItem> values = (OrdinalScale.class.cast(requirement
-				.getMeasure().getScale()).getOrdinalScaleItems());
+				.getIndicator().getScale()).getOrdinalScaleItems());
 		String result = (String)value.getValue();
 		String threshold = requirement.getThreshold();
 		int resultRanking = 0;
 		int thresholdRanking = 0;
 		
 		for (OrdinalScaleItem ordinalScaleItem : values) {
-			if(ordinalScaleItem.getName().equalsIgnoreCase(threshold))
-				thresholdRanking = ordinalScaleItem.getRanking();
-			if(ordinalScaleItem.getName().equalsIgnoreCase(result))
-				resultRanking = ordinalScaleItem.getRanking();
+			if(ordinalScaleItem.getLabel().equalsIgnoreCase(threshold))
+				thresholdRanking = ordinalScaleItem.getOrder();
+			if(ordinalScaleItem.getLabel().equalsIgnoreCase(result))
+				resultRanking = ordinalScaleItem.getOrder();
 		}
 		
 		if(resultRanking>thresholdRanking)

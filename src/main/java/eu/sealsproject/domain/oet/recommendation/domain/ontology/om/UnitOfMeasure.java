@@ -1,24 +1,24 @@
-package eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel;
+package eu.sealsproject.domain.oet.recommendation.domain.ontology.om;
 
 import thewebsemantic.Namespace;
 import thewebsemantic.RdfProperty;
 import thewebsemantic.RdfType;
 import eu.sealsproject.domain.oet.recommendation.config.Constants;
 
-@Namespace(Constants.MUO)
-@RdfType("UnitOfMeasurement")
-public class UnitOfMeasurement {
+@Namespace(Constants.OM_NS)
+@RdfType("Unit_of)measure")
+public class UnitOfMeasure {
 
 	private String symbol;
 	
-	public UnitOfMeasurement() {
+	public UnitOfMeasure() {
 	}
 
-	public UnitOfMeasurement(String symbol) {
+	public UnitOfMeasure(String symbol) {
 		this.symbol = symbol;
 	}
 
-	@RdfProperty(Constants.MUO + "prefSymbol")
+	@RdfProperty(Constants.QMO_NS + "symbol")
 	public String getSymbol() {
 		return symbol;
 	}

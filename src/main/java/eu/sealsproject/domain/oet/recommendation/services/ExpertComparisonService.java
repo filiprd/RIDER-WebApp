@@ -121,10 +121,10 @@ public class ExpertComparisonService {
 			columnCharacteristic, DataService service){
 		for (int i = 0; i < supermatrix.getRowDimension(); i++) {
 			String rowMeasureUri = supermatrix.getMapping().getCharacteristicUri(i);
-			if(service.getCharacteristicUriOfMeasure(rowMeasureUri).equals(rowCharacteristic)){
+			if(service.getCharacteristicUriOfIndicator(rowMeasureUri).equals(rowCharacteristic)){
 				for (int j = 0; j < supermatrix.getColumnDimension(); j++) {
 					String columnMeasureUri = supermatrix.getMapping().getCharacteristicUri(j);
-					if(service.getCharacteristicUriOfMeasure(columnMeasureUri).equals(columnCharacteristic)){
+					if(service.getCharacteristicUriOfIndicator(columnMeasureUri).equals(columnCharacteristic)){
 						if(supermatrix.get(i, j) != 0)
 							return true;
 					}
@@ -138,6 +138,7 @@ public class ExpertComparisonService {
 	
 	public void setSupermatrixComparison(Matrix supermatrix, String controlCriterion,
 			LinkedList<Matrix> supermatrixComparisons, LinkedList<QualityMeasureDependencies> dependencies){
+
 		
 		MatrixMapping supermatrixMapping = supermatrix.getMapping();		
 		for (Matrix comparisonMatrix : supermatrixComparisons) {			
@@ -170,8 +171,10 @@ public class ExpertComparisonService {
 						supermatrix.set(rowInSupermatrix, columnInSupermatrix, weights.get(i, 0));
 					}
 				}
-				if(indexes.size() == 1)
-					supermatrix.set(indexes.get(0), supermatrixMapping.getRowNumber(controlCriterion), 1);
+				if(indexes.size() == 1){
+					supermatrix.set(supermatrixMapping.getRowNumber(weightsMappingItems.get(indexes.get(0)).getChracteristicUri()), supermatrixMapping.getRowNumber(controlCriterion), 1);
+				}
+				System.out.println();
 			}
 		}
 		

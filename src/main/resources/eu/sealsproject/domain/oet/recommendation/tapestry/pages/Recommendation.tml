@@ -11,7 +11,7 @@
 <t:grid source="requirements" row="requirement" add="measure"
 	reorder="measure">
 	<p:measureCell>
-					${requirement.measure.name}
+					${requirement.indicator.name}
 				</p:measureCell>
 </t:grid>
 
@@ -20,11 +20,11 @@
 
 <p>This table presents the results of the recommendation.
 Alternatives are sorted from best to worst, and each alternative
-contains a tool or a set of tools suitable for the previously specified
-criteria. The field <i>Result</i> denotes the overall score of each
+contains a product or service or a set of products or services suitable for the previously specified
+requirements (criteria). The field <i>Result</i> denotes the overall score of each
 alternative in the recommendation process.<br />
-You can click on any tool and observe all evaluation result for that
-tool.</p>
+You can click on any alternative and observe all evaluation result for that
+alternative.</p>
 
 
 <t:grid source="recommendations" row="alternative" exclude="id"
@@ -33,9 +33,9 @@ tool.</p>
 					Alternative ${increaseOrder(recommendations.indexOf(alternative))}
 				</p:orderCell>
 	<p:toolsCell>
-		<t:loop source="alternative.tools" value="toolVersion">
-			<t:actionlink t:id="showResults" context="toolVersion.uri">
-					             		${toolVersion.name}
+		<t:loop source="alternative.evaluationSubjects" value="evaluationSubject">
+			<t:actionlink t:id="showResults" context="evaluationSubject.uri">
+					             		${evaluationSubject.name}
 					    </t:actionlink>
 			<br />
 		</t:loop>
@@ -52,8 +52,6 @@ tool.</p>
 <p><b>Evaluation results.</b> This table shows importance and
 evaluation results for each specified criteria. Results that do not
 satisfy given criteria are colored in red.<br />
-If the visualization of the tests in which the results are obtained is
-available, you can see it by clicking on the result.<br/>
 By clicking on the <i>Importance</i> in the header of the table you can explore the importance flows of your requirements.
 </p>
 
@@ -82,35 +80,22 @@ By clicking on the <i>Importance</i> in the header of the table you can explore 
 	<tbody>
 		<t:loop source="requirements" value="requirement">
 			<tr>
-				<td bgcolor="#DFDFDF">${requirement.measure.name}</td>
-				<td><span class="blue">${getImportance(requirement.measure.uri.toString())}</span></td>
+				<td bgcolor="#DFDFDF">${requirement.indicator.name}</td>
+				<td><span class="blue">${getImportance(requirement.indicator.uri.toString())}</span></td>
 
 				<t:loop source="recommendations" value="alternative">
 					<t:if t:test="${lessThanTen(recommendations.indexOf(alternative))}">
 
-						<t:if t:test="${hasVisualization(requirement.measure)}">
-							<t:if
-								t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
-								<td><a
-									href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
-									target="_blank"> <span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
-								<p:else>
-									<td><a
-										href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
-										target="_blank"> <span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
-								</p:else>
-							</t:if>
-							<p:else>
 								<t:if
-									t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
-									<td><span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									t:test="${satisfiesThreshold(alternative,requirement.indicator.uri.toString(),requirement.threshold)}">
+									<td><span class="green">${getQualityValue(alternative,requirement.indicator.uri.toString()).value}</span></td>
 									<p:else>
-										<td><span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+										<td><span class="red">${getQualityValue(alternative,requirement.indicator.uri.toString()).value}</span></td>
 									</p:else>
 								</t:if>
-							</p:else>
+							
 						</t:if>
-					</t:if>
+				
 				</t:loop>
 
 			</tr>
@@ -144,35 +129,21 @@ By clicking on the <i>Importance</i> in the header of the table you can explore 
 	<tbody>
 		<t:loop source="requirements" value="requirement">
 			<tr>
-				<td bgcolor="#DFDFDF">${requirement.measure.name}</td>
-				<td><span class="blue">${getImportance(requirement.measure.uri.toString())}</span></td>
+				<td bgcolor="#DFDFDF">${requirement.indicator.name}</td>
+				<td><span class="blue">${getImportance(requirement.indicator.uri.toString())}</span></td>
 				<t:loop source="recommendations" value="alternative">
 					<t:if
 						t:test="${greaterThanTen(recommendations.indexOf(alternative))}">
 
 
-						<t:if t:test="${hasVisualization(requirement.measure)}">
-							<t:if
-								t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
-								<td><a
-									href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
-									target="_blank"> <span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
-								<p:else>
-									<td><a
-										href="${getUrl(getQualityValue(alternative,requirement.measure.uri.toString()).forMeasure.uri.toString(),getQualityValue(alternative,requirement.measure.uri.toString()).obtainedFrom.evaluatesTool.name)}"
-										target="_blank"> <span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></a></td>
-								</p:else>
-							</t:if>
-							<p:else>
+
 								<t:if
-									t:test="${satisfiesThreshold(alternative,requirement.measure.uri.toString(),requirement.threshold)}">
-									<td><span class="green">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+									t:test="${satisfiesThreshold(alternative,requirement.indicator.uri.toString(),requirement.threshold)}">
+									<td><span class="green">${getQualityValue(alternative,requirement.indicator.uri.toString()).value}</span></td>
 									<p:else>
-										<td><span class="red">${getQualityValue(alternative,requirement.measure.uri.toString()).value}</span></td>
+										<td><span class="red">${getQualityValue(alternative,requirement.indicator.uri.toString()).value}</span></td>
 									</p:else>
 								</t:if>
-							</p:else>
-						</t:if>
 					</t:if>
 				</t:loop>
 			</tr>

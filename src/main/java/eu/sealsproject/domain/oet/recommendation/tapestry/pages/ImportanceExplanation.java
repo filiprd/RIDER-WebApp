@@ -99,7 +99,7 @@ public class ImportanceExplanation {
 	public boolean isRequirement(LinkedList<String> listOfInfluences){
 		String measureUri = getMeasureUri(listOfInfluences);
 		for (Requirement req : requirements) {
-			if(req.getMeasure().getUri().toString().equalsIgnoreCase(measureUri))
+			if(req.getIndicator().getUri().toString().equalsIgnoreCase(measureUri))
 				return true;
 		}
 		return false;
@@ -112,7 +112,7 @@ public class ImportanceExplanation {
 	public String getImportance(LinkedList<String> listOfInfluences){
 		String measureUri = getMeasureUri(listOfInfluences);
 		for (Requirement req : requirements) {
-			if(req.getMeasure().getUri().toString().equalsIgnoreCase(measureUri))
+			if(req.getIndicator().getUri().toString().equalsIgnoreCase(measureUri))
 				return importances.get(requirements.indexOf(req));
 		}
 		return "0";

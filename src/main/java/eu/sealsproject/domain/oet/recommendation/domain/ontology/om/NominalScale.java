@@ -1,4 +1,4 @@
-package eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel;
+package eu.sealsproject.domain.oet.recommendation.domain.ontology.om;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -8,9 +8,9 @@ import thewebsemantic.RdfProperty;
 import thewebsemantic.RdfType;
 import eu.sealsproject.domain.oet.recommendation.config.Constants;
 
-@Namespace(Constants.QUALITY_MODEL_NS)
-@RdfType("NominalScale")
-public class NominalScale extends Scale {
+@Namespace(Constants.OM_NS)
+@RdfType("Nominal_scale")
+public class NominalScale extends MeasurementScale {
 
 	/**
 	 * 
@@ -24,7 +24,7 @@ public class NominalScale extends Scale {
 		this.labels = new LinkedList<String>();
 	}
 
-	@RdfProperty(Constants.QUALITY_MODEL_NS + "hasLabel")
+	@RdfProperty(Constants.QMO_NS + "hasLabel")
 	public Collection<String> getLabels() {
 		return labels;
 	}

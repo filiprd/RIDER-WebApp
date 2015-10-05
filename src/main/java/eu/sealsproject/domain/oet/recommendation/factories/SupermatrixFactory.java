@@ -1,4 +1,4 @@
-package eu.sealsproject.domain.oet.recommendation.matrixfactory;
+package eu.sealsproject.domain.oet.recommendation.factories;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,8 +19,8 @@ import org.json.simple.parser.ParseException;
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolCategory;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityIndicator;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
 import eu.sealsproject.domain.oet.recommendation.services.AlternativesFactory;
 import eu.sealsproject.domain.oet.recommendation.services.ExpertComparisonService;
 import eu.sealsproject.domain.oet.recommendation.services.SupermatrixService;
@@ -153,7 +153,7 @@ public class SupermatrixFactory {
 		
 		int indexer = 0;
 		for (Requirement requirement : requirements) {
-			supermatrixMapping.addMapItem(new MapItem(indexer++, requirement.getMeasure().getUri().toString()));
+			supermatrixMapping.addMapItem(new MapItem(indexer++, requirement.getIndicator().getUri().toString()));
 		}
 		supermatrixMatrix.setMapping(supermatrixMapping);
 		
@@ -171,13 +171,13 @@ public class SupermatrixFactory {
 	 */
 	private Matrix getCompleteSupermatrix(LinkedList<Requirement> requirements, LinkedList<Matrix> criteriaComparisons, DataService service){
 		MatrixMapping supermatrixMapping = new MatrixMapping();
-		Collection<QualityMeasure> qualtyMeasures = service.getAllQualityMeasures();
+		Collection<QualityIndicator> qualtyIndicators = service.getAllQualityIndicators();
 		
-		Matrix supermatrixMatrix = new Matrix(qualtyMeasures.size(), qualtyMeasures.size(), 0);
+		Matrix supermatrixMatrix = new Matrix(qualtyIndicators.size(), qualtyIndicators.size(), 0);
 		supermatrixMatrix.setId("supermatrix");
 		
 		int indexer = 0;
-		for (QualityMeasure qualityMeasure : qualtyMeasures) {
+		for (QualityMeasure qualityMeasure : qualtyIndicators) {
 			supermatrixMapping.addMapItem(new MapItem(indexer++, qualityMeasure.getUri().toString()));
 		}
 		supermatrixMatrix.setMapping(supermatrixMapping);
@@ -199,16 +199,16 @@ public class SupermatrixFactory {
 		
 		int indexer = 0;
 		for (Requirement requirement : requirements) {
-			if (!supermatrixCriteria.contains(requirement.getMeasure().getUri()
+			if (!supermatrixCriteria.contains(requirement.getIndicator().getUri()
 					.toString())) {
 				supermatrixMapping.addMapItem(new MapItem(indexer++,
-						requirement.getMeasure().getUri().toString()));
-				supermatrixCriteria.add(requirement.getMeasure().getUri()
+						requirement.getIndicator().getUri().toString()));
+				supermatrixCriteria.add(requirement.getIndicator().getUri()
 						.toString());
 			}
 			for (QualityMeasureDependencies qmDependencies : dependencies) {
 				if (qmDependencies.getId().equals(
-						requirement.getMeasure().getUri().toString())) {
+						requirement.getIndicator().getUri().toString())) {
 					for (String criteria : qmDependencies.getDependencies()) {
 						if (!supermatrixCriteria.contains(criteria)) {
 							supermatrixMapping.addMapItem(new MapItem(

@@ -1,7 +1,7 @@
 package eu.sealsproject.domain.oet.recommendation.comparisons.interfaces;
 
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
 
 
 public interface AlternativeComparison {

@@ -6,11 +6,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Locale;
 
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.IntervalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.NominalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScale;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.OrdinalScaleItem;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.Scale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.IntervalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.MeasurementScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.NominalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.OrdinalScale;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.OrdinalScaleItem;
 
 public class ScaleValuesUtil {
 
@@ -19,11 +19,11 @@ public class ScaleValuesUtil {
 	 * @param scale
 	 * @param values
 	 */
-	public static void getScaleValues(Scale scale, Collection<String> values){
+	public static void getScaleValues(MeasurementScale scale, Collection<String> values){
 		if(scale instanceof OrdinalScale){
 			OrdinalScale ordinalScale = OrdinalScale.class.cast(scale);
 			for (OrdinalScaleItem scaleItem : ordinalScale.getOrdinalScaleItems()) {
-				values.add(scaleItem.getName());
+				values.add(scaleItem.getLabel());
 			}
 		}
 		if(scale instanceof NominalScale){
@@ -40,12 +40,12 @@ public class ScaleValuesUtil {
 	 * @param scale
 	 * @return
 	 */
-	public static String getIntervalScaleValues(Scale scale) {
+	public static String getIntervalScaleValues(MeasurementScale scale) {
 		Collection<String> values = new LinkedList<String>();
 		IntervalScale interval = (IntervalScale)scale;
 		
-		double lower = Double.valueOf(interval.getLowerBoundry());
-		double higher = Double.valueOf(interval.getUpperBoundry());
+		double lower = Double.valueOf(interval.getLowerBoundary());
+		double higher = Double.valueOf(interval.getUpperBoundary());
 		
 		values.add(String.valueOf(lower));
 		

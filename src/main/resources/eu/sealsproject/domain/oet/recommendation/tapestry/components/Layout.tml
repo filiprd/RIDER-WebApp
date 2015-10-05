@@ -15,7 +15,7 @@ Description: A Web 2.0 design with fluid width suitable for blogs and small webs
       xmlns:p="tapestry:parameter">
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-        <title>SEALS</title>
+        <title>RIDER-WebApp</title>
          <script type="text/javascript">
 			jQuery(document).ready(function(){
 				jQuery('.tTip').betterTooltip({speed: 150, delay: 300});
@@ -67,7 +67,7 @@ Description: A Web 2.0 design with fluid width suitable for blogs and small webs
         <div id="header">
             <div id="logo">
                 <h1>
-                    <t:pagelink page="index">SEALS</t:pagelink>
+                    <t:pagelink page="index">RIDER-WebApp</t:pagelink>
                 </h1>
             </div>
             <div id="menu">
@@ -100,7 +100,7 @@ Description: A Web 2.0 design with fluid width suitable for blogs and small webs
             <div id="content">
                 <div class="post">
                     <div class="title">
-                        <h1>SEALS Semantic Technology Roadmaps</h1>
+                        <h1>Recommendation App</h1>
                     </div>
                     <div class="entry">
                         <t:body/>
@@ -114,7 +114,7 @@ Description: A Web 2.0 design with fluid width suitable for blogs and small webs
         <!-- start footer -->
         <div id="footer">
             <p class="legal">
-                &copy;2012 SEALS Project. All Rights Reserved.
+                &copy;2015 Filip Radulovic, UPM. All Rights Reserved.
                 &nbsp;&nbsp;&bull;&nbsp;&nbsp;
                 Design by
                 <a href="http://www.freecsstemplates.org/">Free CSS Templates</a>

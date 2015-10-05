@@ -2,6 +2,6 @@
       xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
       xmlns:p="tapestry:parameter">
 
-    <p>If you have any questions or comments about SEALS recommendation application, contact fradulovic@delicias.dia.upm.es</p>
-
+    <p>For any questions please contact <a href="http://filip.milstan.net">Filip Radulovic</a>. For bugs report please
+     open an issue on <a href="http://github.com/filiprd/RIDER-WebApp/issues">RIDER-WebApp Github page</a>.</p>
 </html>

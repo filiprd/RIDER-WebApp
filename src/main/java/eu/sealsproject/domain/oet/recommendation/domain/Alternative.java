@@ -5,26 +5,26 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.UUID;
 
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.ToolVersion;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
 
 public class Alternative {
 
 	private String id;
 	
-	private LinkedList<ToolVersion> tools;
+	private LinkedList<EvaluationSubject> evaluationSubjects;
 	
 	private double result;
 
 
 	public Alternative() {
-		this.tools = new LinkedList<ToolVersion>();
-		this.id = "http://www.seals-project.eu/metadata.owl#Alternatives-"+UUID.randomUUID();
+		this.evaluationSubjects = new LinkedList<EvaluationSubject>();
+		this.id = "https://github.com/filiprd/RIDER-WebApp#Alternatives-"+UUID.randomUUID();
 	}
 
-	public Alternative(String id, LinkedList<ToolVersion> tools) {
+	public Alternative(String id, LinkedList<EvaluationSubject> evaluationSubjects) {
 		this.id = id;
-		this.tools = tools;
+		this.evaluationSubjects = evaluationSubjects;
 	}
 
 	public String getId() {
@@ -35,16 +35,16 @@ public class Alternative {
 		this.id = id;
 	}
 
-	public LinkedList<ToolVersion> getTools() {
-		return tools;
+	public LinkedList<EvaluationSubject> getEvaluationSubjects() {
+		return evaluationSubjects;
 	}
 
-	public void setTools(LinkedList<ToolVersion> tools) {
-		this.tools = tools;
+	public void setEvaluationSubjects(LinkedList<EvaluationSubject> tools) {
+		this.evaluationSubjects = tools;
 	}
 	
-	public void addTool(ToolVersion toolVersion){
-		this.getTools().add(toolVersion);
+	public void addEvaluationSubject(EvaluationSubject evaluationSubject){
+		this.getEvaluationSubjects().add(evaluationSubject);
 	}
 
 	public double getResult() {
@@ -58,16 +58,6 @@ public class Alternative {
 		format.setMinimumFractionDigits(8);
 		this.result = Double.parseDouble(format.format(result));
 		
-	}
-	
-	public QualityValue getQualityValue(String qualityMeasureUri){
-		for (ToolVersion toolVersion : getTools()) {
-			for (QualityValue value : toolVersion.getQualityValues()) {
-				if(value.getForMeasure().getUri().toString().equals(qualityMeasureUri))
-					return value;
-			}
-		}		
-		return null;
 	}
 		
 }

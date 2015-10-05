@@ -4,7 +4,7 @@ package eu.sealsproject.domain.oet.recommendation.comparisons;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.AlternativeComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.Satisfiable;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qualitymodel.QualityValue;
+import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
 
 public class NominalScaleComparison implements AlternativeComparison,Satisfiable{
 

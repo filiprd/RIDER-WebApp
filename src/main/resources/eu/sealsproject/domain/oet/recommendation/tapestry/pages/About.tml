@@ -2,8 +2,5 @@
       xmlns:t="http://tapestry.apache.org/schema/tapestry_5_1_0.xsd"
       xmlns:p="tapestry:parameter">
 
-    <p>SEALS recommendation application lets you choose the semantic tool that will best suite your needs.</p>
-     <p>SEALS recommendation application is developed as a part of the SEALS European project. 
-     For more information about SEALS, please visit <a href="http://www.seals-project.eu/" target="_blank">SEALS community page</a></p>.
-
+    <p>This recommendation application is powered by the <a href="http://github.com/filiprd/RIDER-WebApp">RIDER-WebApp</a>.</p>
 </html>
