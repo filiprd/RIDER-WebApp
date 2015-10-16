@@ -18,8 +18,7 @@ public class ApplicationContextProviderSingleton implements
 
 	public String[] getContextLocations() {
 		String[] contextLocations = {
-				"META-INF/eu/sealsproject/domain/oet/recommendation/core/services.xml",
-				"META-INF/eu/sealsproject/domain/oet/recommendation/core/visualization.xml"
+				"META-INF/eu/sealsproject/domain/oet/recommendation/core/services.xml"
 			};
 		return contextLocations;
 	}

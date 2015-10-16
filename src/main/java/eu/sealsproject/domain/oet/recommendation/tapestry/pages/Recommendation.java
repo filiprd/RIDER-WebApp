@@ -7,15 +7,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.tapestry5.annotations.InjectPage;
-import org.apache.tapestry5.annotations.OnEvent;
 import org.apache.tapestry5.annotations.Persist;
 import org.apache.tapestry5.annotations.Property;
-import org.apache.tapestry5.internal.services.URLEncoderImpl;
 import org.apache.tapestry5.ioc.annotations.Inject;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
@@ -24,19 +24,20 @@ import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
 import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.EvaluationSubject;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.eval.QualityValue;
-import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
+import eu.sealsproject.domain.oet.recommendation.factories.HierarchyFactory;
 import eu.sealsproject.domain.oet.recommendation.factories.SupermatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.factories.WeightedMatrixFactory;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 import eu.sealsproject.domain.oet.recommendation.util.ResultsUtil;
 import eu.sealsproject.domain.oet.recommendation.util.Sorter;
 import eu.sealsproject.domain.oet.recommendation.util.ThresholdUtil;
-import eu.sealsproject.domain.oet.recommendation.util.evaluationscenarios.EvaluationScenariosUtil;
+import eu.sealsproject.domain.oet.recommendation.util.comparators.AlternativesComparator;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 
 
 public class Recommendation {
 	
+	@Persist
 	private Properties config;
 	
 	@Inject
@@ -72,6 +73,9 @@ public class Recommendation {
 	
 	@Persist
 	private Matrix weightedMatrix;
+
+	@Persist
+	private Properties criteriaWeights;
 	
 	public void onActivate() {
 					
@@ -84,8 +88,8 @@ public class Recommendation {
 			loadConfig();
 			if(config.get("mcdm-method").equals("anp"))
 				makeANPRecommendations(requirements);
-//			if(config.get("mcdm-method").equals("ahp"))
-//				makeAHPRecommendations(requirements);
+			if(config.get("mcdm-method").equals("ahp"))
+				makeAHPRecommendations(requirements);
 			
 		}
 		return this;
@@ -118,14 +122,21 @@ public class Recommendation {
 	}
 	
 	public String getImportance(String measureUri){
-		for (MapItem item : limitSupermatrix.getMapping().getMap()) {
-			if (item.getChracteristicUri().equals(measureUri)){
-				DecimalFormat format = new DecimalFormat();
-				format.setMinimumIntegerDigits(1);
-				format.setMaximumFractionDigits(3);
-				format.setMinimumFractionDigits(3);
-				return format.format(limitSupermatrix.get(item.getRowNumber(), 0));
+		if(config.get("mcdm-method").equals("anp")){
+			for (MapItem item : limitSupermatrix.getMapping().getMap()) {
+				if (item.getChracteristicUri().equals(measureUri)){
+					DecimalFormat format = new DecimalFormat();
+					format.setMinimumIntegerDigits(1);
+					format.setMaximumFractionDigits(3);
+					format.setMinimumFractionDigits(3);
+					return format.format(limitSupermatrix.get(item.getRowNumber(), 0));
+				}
 			}
+		}
+			
+		if(config.get("mcdm-method").equals("ahp")){
+			return String.valueOf(Double.parseDouble(criteriaWeights.get(measureUri).toString()) *
+					Double.parseDouble(criteriaWeights.get(service.getCharacteristicUriOfIndicator(measureUri)).toString()));
 		}
 		return "";
 	}
@@ -207,10 +218,11 @@ public class Recommendation {
 	}
 	
 	
-//	private void makeAHPRecommendations(LinkedList<Requirement> requirements){
-//		AHPFactory factory = new AHPFactory();
-//		recommendations = factory.getRecommendations(requirements, service);
-//	}
+	private void makeAHPRecommendations(LinkedList<Requirement> requirements){
+		HierarchyFactory factory = new HierarchyFactory();
+		recommendations = factory.getRecommendations(requirements, service);
+		criteriaWeights = factory.getCriteriaWeights();
+	}
 	
 	
 	/**

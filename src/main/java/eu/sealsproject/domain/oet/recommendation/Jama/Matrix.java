@@ -1420,8 +1420,9 @@ public class Matrix implements Cloneable, Serializable {
 	 */
 	public Matrix getWeights() {
 		int rowDimension = getRowDimension();
-		// first, the columns are normalized
-		Matrix normalized = normalizeColumns();
+		// first, the columns are normalized in  anew matrix
+		Matrix n = (Matrix)this.clone();
+		Matrix normalized = n.normalizeColumns();
 		// the vector which represents weights
 		double[] eigenVector = new double[rowDimension];
 		for (int i = 0; i < normalized.getRowDimension(); i++) {

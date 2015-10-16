@@ -13,6 +13,7 @@ import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityIndi
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.QualityMeasure;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.RankingFunction;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
+import eu.sealsproject.domain.oet.recommendation.util.RequirementsUtil;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
 import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
 
@@ -41,7 +42,7 @@ public class SupermatrixService {
 		
 				
 		for (Requirement requirement : requirements) {
-			Matrix mat = compareAlternatives(requirement,alternatives, algorithm, service);	
+			Matrix mat = ComparisonService.compareAlternatives(requirement,alternatives, algorithm, service);	
 			
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().
@@ -135,94 +136,7 @@ public class SupermatrixService {
 		return weights;
 	}
 
-	// compares alternatives w.r.t characteristic and returns weights
-	public static Matrix compareAlternatives(Requirement requirement,
-			LinkedList<Alternative> alternatives, String algorithm, DataService service) {
-		
-		int size = alternatives.size();
-		Matrix comparison = new Matrix(size,size);
-		
-		for (int i = 0; i < size; i++) {
-			for (int j = i; j < size; j++) {
-				if(i == j){
-					comparison.set(i, j, 1);
-					continue;
-				}
-				
-				
-				Method comparator;
-				double result = -1;
-				try {
-					Class<?> clazz = Class.forName("eu.sealsproject.domain.oet.recommendation.services.ComparisonService");
-					Object inst = clazz.newInstance();
-					comparator = clazz.getMethod(algorithm + "Comparison", Alternative.class, Alternative.class, Requirement.class,
-									DataService.class);
-					Object obj = comparator.invoke(inst, alternatives.get(i), alternatives.get(j), requirement, service);
-					result = Double.parseDouble(obj.toString());
-				} catch (SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchMethodException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NumberFormatException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					e.getCause().printStackTrace();
-				} catch (InstantiationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-//				double result = ComparisonService.compareAlternativesMaxDistance(alternatives.get(i), 
-//						alternatives.get(j),requirement, service);
-				
-				if(result == -1)
-					throw new RuntimeException("There was an error in ivoking comparion algorithm "
-							+ "when comparing " + alternatives.get(i).getId() + " to " + alternatives.get(j).getId() + 
-							" with respect to " + requirement.getIndicator().getName());
-				
-				comparison.set(i, j, result);
-				comparison.set(j, i, 1/result);
-			}
-		}
-		
-		
-//		for (int i = 0; i < comparison.getRowDimension(); i++) {
-//			for (int j = 0; j < comparison.getColumnDimension(); j++) {
-//				if(comparison.get(i, j)<0){
-//					System.out.println(comparison.get(i, j));
-//					System.out.println(comparison.get(j, i));
-//					System.out.println("");
-//				}
-//			}
-//		}
-		
-//		System.out.println("Comparison matrix");
-//		comparison.print(1, 3);
-		
-//		if(comparison.getRowDimension() != comparison.getColumnDimension())
-//			System.err.println("DIFFERENT DIMMENSIONS");
-		
-//		System.out.println("");
-		
-//		System.out.println("Weights matrix");		
-		Matrix weights = comparison.getWeights();
-//		weights.print(1, 3);
-		
-		return weights;
-	}
+
 	
 	// returns the array of row indexes that corresponds to the list of requirements
 	private static int[] getPositionsForClusterRequirements(Matrix supermatrix,
@@ -279,9 +193,9 @@ public class SupermatrixService {
 						
 		for (int i = 0; i<k; i++) {
 			String measureUri = supermatrix.getMapping().getCharacteristicUri(i);
-			Requirement requirement = getRequirement(requirements, measureUri, service);
+			Requirement requirement = RequirementsUtil.getRequirement(requirements, measureUri, service);
 			AlternativesFactory.addMeasureToAlternatives(alternatives,measureUri, service);
-			Matrix mat = compareAlternatives(requirement,alternatives, algorithm, service);	
+			Matrix mat = ComparisonService.compareAlternatives(requirement,alternatives, algorithm, service);	
 						
 			// columnIndex to put the comparison
 			int columnIndex = supermatrix.getMapping().
@@ -304,7 +218,7 @@ public class SupermatrixService {
 		LinkedList<String> alreadyCompared = new LinkedList<String>();
 		for (int i = 0; i < k; i++) {
 			String measureUri = supermatrix.getMapping().getCharacteristicUri(i);
-			Requirement r = getRequirement(requirements, measureUri, service);
+			Requirement r = RequirementsUtil.getRequirement(requirements, measureUri, service);
 			LinkedList<Requirement> cluster = new LinkedList<Requirement>();
 			cluster.add(r);
 			if(alreadyCompared.contains(r.getIndicator().getQualityCharacteristic().getUri().toString()))
@@ -312,7 +226,7 @@ public class SupermatrixService {
 			alreadyCompared.add(r.getIndicator().getQualityCharacteristic().getUri().toString());
 			for (int j = i+1; j < k; j++) {
 				String measureUri2 = supermatrix.getMapping().getCharacteristicUri(j);
-				Requirement r2 = getRequirement(requirements, measureUri2, service);
+				Requirement r2 = RequirementsUtil.getRequirement(requirements, measureUri2, service);
 				if(r.getIndicator().getQualityCharacteristic().getUri().
 						equals(r2.getIndicator().getQualityCharacteristic().getUri()))
 					cluster.add(r2);
@@ -336,41 +250,4 @@ public class SupermatrixService {
 		
 	}
 	
-	
-	/**
-	 * Returns the requirement that is related to a given measure. If the measure is not in the requirements list
-	 * a new requirement is created for that measure with the threshold equals to the best value, 
-	 * so that a comparison can be performed.
-	 * @param requirements
-	 * @param measureUri
-	 * @param service
-	 * @return
-	 */
-	private static Requirement getRequirement(LinkedList<Requirement> requirements, String measureUri, DataService service){
-		for (Requirement requirement : requirements) {
-			if(requirement.getIndicator().getUri().toString().equals(measureUri))
-				return requirement;
-		}
-
-		QualityIndicator indicator = service.getQualityIndicatorObject(measureUri);
-		if(indicator.getScale().getClass().getSimpleName().equalsIgnoreCase("RatioScale")){
-			RatioScale scale = (RatioScale) indicator.getScale();
-			String threshold = "";
-			if(scale.getRankingFunction().equals(RankingFunction.HIGHER_BEST))
-				threshold = "1";
-			if(scale.getRankingFunction().equals(RankingFunction.LOWER_BEST))
-				threshold = "0";
-			return new Requirement(indicator,threshold);						
-		}
-		if(indicator.getScale().getClass().getSimpleName().equalsIgnoreCase("IntervalScale")){
-			IntervalScale scale = (IntervalScale) indicator.getScale();
-			String threshold = "";
-			if(scale.getRankingFunction().equals(RankingFunction.HIGHER_BEST))
-				threshold = String.valueOf(scale.getUpperBoundary());
-			if(scale.getRankingFunction().equals(RankingFunction.LOWER_BEST))
-				threshold = String.valueOf(scale.getLowerBoundary());
-			return new Requirement(indicator,threshold);								
-		}
-		return null;
-	}
 }

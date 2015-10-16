@@ -1,5 +1,10 @@
 package eu.sealsproject.domain.oet.recommendation.services;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.LinkedList;
+
+import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
 import eu.sealsproject.domain.oet.recommendation.comparisons.CharacteristicsComparison;
 import eu.sealsproject.domain.oet.recommendation.comparisons.interfaces.AlternativeComparison;
 import eu.sealsproject.domain.oet.recommendation.domain.Alternative;
@@ -9,6 +14,8 @@ import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.IntervalScal
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.om.RatioScale;
 import eu.sealsproject.domain.oet.recommendation.domain.ontology.qmo.RankingFunction;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
+import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
+import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
 
 public class ComparisonService {
 
@@ -18,9 +25,6 @@ public class ComparisonService {
 		
 		QualityValue value1 = service.getQualityValueForAlternative(alternative1, requirement.getIndicator().getUri().toString());
 		QualityValue value2 = service.getQualityValueForAlternative(alternative2, requirement.getIndicator().getUri().toString());
-
-		
-
 		
 		try {
 			
@@ -135,6 +139,84 @@ public class ComparisonService {
 		return CharacteristicsComparison.compare(value1,requirement1,
 				value2,requirement2);
 
+	}
+	
+	
+	// compares alternatives w.r.t characteristic and returns weights
+	public static Matrix compareAlternatives(Requirement requirement,
+			LinkedList<Alternative> alternatives, String algorithm, DataService service) {
+		
+		int size = alternatives.size();
+		Matrix comparison = new Matrix(size,size);
+		
+		MatrixMapping comparisonMatrixMapping = new MatrixMapping();
+		
+		for (int i = 0; i < size; i++) {
+			comparisonMatrixMapping.addMapItem(new MapItem(i, alternatives.get(i).getId()));
+			
+			for (int j = i; j < size; j++) {
+				if(i == j){
+					comparison.set(i, j, 1);
+					continue;
+				}
+				
+				
+				Method comparator;
+				double result = -1;
+				try {
+					Class<?> clazz = Class.forName("eu.sealsproject.domain.oet.recommendation.services.ComparisonService");
+					Object inst = clazz.newInstance();
+					comparator = clazz.getMethod(algorithm + "Comparison", Alternative.class, Alternative.class, Requirement.class,
+									DataService.class);
+					Object obj = comparator.invoke(inst, alternatives.get(i), alternatives.get(j), requirement, service);
+					result = Double.parseDouble(obj.toString());
+				} catch (SecurityException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchMethodException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.getCause().printStackTrace();
+				} catch (InstantiationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+//				double result = ComparisonService.compareAlternativesMaxDistance(alternatives.get(i), 
+//						alternatives.get(j),requirement, service);
+				
+				if(result == -1)
+					throw new RuntimeException("There was an error in ivoking comparion algorithm "
+							+ "when comparing " + alternatives.get(i).getId() + " to " + alternatives.get(j).getId() + 
+							" with respect to " + requirement.getIndicator().getName());
+				
+				comparison.set(i, j, result);
+				comparison.set(j, i, 1/result);
+
+			}
+		}
+		
+		
+
+		Matrix weights = comparison.getWeights();
+		weights.setMapping(comparisonMatrixMapping);
+		weights.setId(requirement.getIndicator().getUri().toString());
+		
+		return weights;
 	}
 	
 

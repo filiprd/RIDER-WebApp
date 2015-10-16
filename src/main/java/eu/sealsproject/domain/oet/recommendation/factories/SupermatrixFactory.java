@@ -72,19 +72,6 @@ public class SupermatrixFactory {
 	}
 
 
-	/**
-	 * Converts a list of integers into the array of integers
-	 * @param clusterIndexes
-	 * @return
-	 */
-	private int[] getIndexes(LinkedList<Integer> clusterIndexes) {
-		int[] in = new int[clusterIndexes.size()];
-		int dex = 0;		
-		for (int i : clusterIndexes) {
-			in[dex++] = i;
-		}
-		return in;
-	}
 
 	public LinkedList<Alternative> getAlternatives() {
 		return alternatives;

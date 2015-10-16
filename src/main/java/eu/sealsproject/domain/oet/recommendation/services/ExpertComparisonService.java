@@ -1,15 +1,14 @@
 package eu.sealsproject.domain.oet.recommendation.services;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -17,6 +16,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import eu.sealsproject.domain.oet.recommendation.Jama.Matrix;
+import eu.sealsproject.domain.oet.recommendation.domain.Requirement;
 import eu.sealsproject.domain.oet.recommendation.services.repository.DataService;
 import eu.sealsproject.domain.oet.recommendation.util.dependencies.QualityMeasureDependencies;
 import eu.sealsproject.domain.oet.recommendation.util.map.MapItem;
@@ -25,7 +25,8 @@ import eu.sealsproject.domain.oet.recommendation.util.map.MatrixMapping;
 public class ExpertComparisonService {
 
 	private LinkedList<Matrix> clusterComparisons = new LinkedList<Matrix>();
-//	private LinkedList<Matrix> supermatrixComparisons = new LinkedList<Matrix>();
+
+	LinkedList<String> qualityCharacteristicUris = new LinkedList<String>();
 	
 	public ExpertComparisonService(){
 	}
@@ -211,6 +212,74 @@ public class ExpertComparisonService {
 		return false;
 	}
 	
+	
+	public void calculateHierarchyWeights(Properties criteriaWeights, LinkedList<Requirement> requirements,
+			LinkedList<Matrix> criteriaComparisons) {
+		
+		for (Requirement requirement : requirements) {
+			if(!qualityCharacteristicUris.contains(requirement.getIndicator().getQualityCharacteristic().getUri().toString()))
+				qualityCharacteristicUris.add(requirement.getIndicator().getQualityCharacteristic().getUri().toString());
+		}
+		
+		calculateCharacteristicWeights(criteriaWeights, requirements, criteriaComparisons);
+		
+		calculateIndicatorWeights(criteriaWeights, requirements, criteriaComparisons);
+		
+	}
+	
+	private void calculateIndicatorWeights(Properties criteriaWeights,
+			LinkedList<Requirement> requirements,
+			LinkedList<Matrix> criteriaComparisons) {
+		
+		for (String characteristicUri : qualityCharacteristicUris) {
+			
+			LinkedList<String> indicatorUris = new LinkedList<String>();
+			for (Requirement requirement : requirements) {
+				if(requirement.getIndicator().getQualityCharacteristic().getUri().toString().equals(characteristicUri))
+					indicatorUris.add(requirement.getIndicator().getUri().toString());
+			}
+			
+			writeWeightsToProperties(criteriaWeights, criteriaComparisons, characteristicUri, indicatorUris);		
+		}	
+	}
+
+
+	private void calculateCharacteristicWeights(Properties criteriaWeights,
+			LinkedList<Requirement> requirements,
+			LinkedList<Matrix> criteriaComparisons) {
+		
+		writeWeightsToProperties(criteriaWeights, criteriaComparisons, "Characteristics", qualityCharacteristicUris);
+	}
+	
+	
+	private void writeWeightsToProperties(Properties criteriaWeights, LinkedList<Matrix> criteriaComparisons, String qualityCharacteristic, LinkedList<String> elementsToCompare){
+		if(elementsToCompare.size() == 1){
+			criteriaWeights.put(elementsToCompare.get(0), 1);
+			return;
+		}
+		for (Matrix criteriaComparison : criteriaComparisons) {
+			if(criteriaComparison.getId().equals(qualityCharacteristic)){
+				int k = 0;
+				LinkedList<Integer> indexes = new LinkedList<Integer>();
+				MatrixMapping weightsMapping = new MatrixMapping();
+				for (int i = 0; i < criteriaComparison.getRowDimension(); i++) {
+					if(elementsToCompare.contains(criteriaComparison.getMapping().getCharacteristicUri(i))){
+						indexes.add(i);
+						weightsMapping.addMapItem(new MapItem(k++, criteriaComparison.getMapping().getCharacteristicUri(i)));
+					}
+				}
+				int[] in = getIndexes(indexes);
+				Matrix subComparison = new Matrix(criteriaComparison.getMatrix(in,in).getArray());	
+				Matrix weights = subComparison.getWeights();
+				for (int i = 0; i < in.length; i++) {
+					criteriaWeights.put(weightsMapping.getCharacteristicUri(i), weights.get(i, 0));
+				}
+			}
+		}
+	}
+	
+
+
 	private static LinkedList<Matrix> loadClusterComparisons(LinkedList<String> characteristicUris){
 		// Load the JSON file containing data about comparison matrices
 				URL url = Thread.currentThread().getContextClassLoader()
@@ -280,5 +349,6 @@ public class ExpertComparisonService {
 		}
 		return in;
 	}
-
+	
+	
 }
