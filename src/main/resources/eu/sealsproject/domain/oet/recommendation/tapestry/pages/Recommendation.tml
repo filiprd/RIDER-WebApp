@@ -52,7 +52,11 @@ alternative.</p>
 <p><b>Evaluation results.</b> This table shows importance and
 evaluation results for each specified criteria. Results that do not
 satisfy given criteria are colored in red.<br />
+
+<t:if t:test="${isAnp}">
 By clicking on the <i>Importance</i> in the header of the table you can explore the importance flows of your requirements.
+</t:if>
+
 </p>
 
 <table class="t-data-grid" width="200" border="1">
@@ -60,9 +64,14 @@ By clicking on the <i>Importance</i> in the header of the table you can explore 
 		<tr>
 			<th class="Category t-first">Quality Measure</th>
 			<th class="Importance"> 
+				<t:if t:test="${isAnp}">
 						<t:actionlink t:id="explainImportance">
 					             		Importance
-					    </t:actionlink>			
+					    </t:actionlink>
+					<p:else>
+						Importance
+					</p:else>		
+				</t:if>
 			</th>
 			<t:loop source="recommendations" value="alternative">
 				<t:if t:test="${lessThanTen(recommendations.indexOf(alternative))}">

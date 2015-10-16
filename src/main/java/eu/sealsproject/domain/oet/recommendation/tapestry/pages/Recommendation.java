@@ -77,8 +77,21 @@ public class Recommendation {
 	@Persist
 	private Properties criteriaWeights;
 	
+	@Persist
+	@Property
+	private boolean isAnp;
+	
+	DecimalFormat format = new DecimalFormat();
+	
+	NumberFormat alternativeFormat = NumberFormat.getInstance(Locale.UK);	
+	
 	public void onActivate() {
-					
+		format.setMinimumIntegerDigits(1);
+		format.setMaximumFractionDigits(3);
+		format.setMinimumFractionDigits(3);
+		alternativeFormat.setMinimumIntegerDigits(1);
+		alternativeFormat.setMaximumFractionDigits(4);
+		alternativeFormat.setMinimumFractionDigits(4);
 	}
 	
 	public Object showRecommendations(LinkedList<Requirement> requirements){
@@ -125,17 +138,13 @@ public class Recommendation {
 		if(config.get("mcdm-method").equals("anp")){
 			for (MapItem item : limitSupermatrix.getMapping().getMap()) {
 				if (item.getChracteristicUri().equals(measureUri)){
-					DecimalFormat format = new DecimalFormat();
-					format.setMinimumIntegerDigits(1);
-					format.setMaximumFractionDigits(3);
-					format.setMinimumFractionDigits(3);
 					return format.format(limitSupermatrix.get(item.getRowNumber(), 0));
 				}
 			}
 		}
 			
 		if(config.get("mcdm-method").equals("ahp")){
-			return String.valueOf(Double.parseDouble(criteriaWeights.get(measureUri).toString()) *
+			return format.format(Double.parseDouble(criteriaWeights.get(measureUri).toString()) *
 					Double.parseDouble(criteriaWeights.get(service.getCharacteristicUriOfIndicator(measureUri)).toString()));
 		}
 		return "";
@@ -193,14 +202,11 @@ public class Recommendation {
 	}
 	
 	public double getResult(double result){
-		NumberFormat format = NumberFormat.getInstance(Locale.UK);
-		format.setMinimumIntegerDigits(1);
-		format.setMaximumFractionDigits(4);
-		format.setMinimumFractionDigits(4);
-		return Double.parseDouble(format.format(result));
+		return Double.parseDouble(alternativeFormat.format(result));
 	}
 	
 	private void makeANPRecommendations(LinkedList<Requirement> requirements){
+		this.isAnp = true;
 		SupermatrixFactory factory = new SupermatrixFactory();
 		Matrix supermatrix = factory.create(requirements, service);
 		
@@ -219,6 +225,7 @@ public class Recommendation {
 	
 	
 	private void makeAHPRecommendations(LinkedList<Requirement> requirements){
+		this.isAnp = false;
 		HierarchyFactory factory = new HierarchyFactory();
 		recommendations = factory.getRecommendations(requirements, service);
 		criteriaWeights = factory.getCriteriaWeights();
